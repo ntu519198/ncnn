@@ -38,6 +38,11 @@ int Deconvolution::load_param(const ParamDict& pd)
     bias_term = pd.get(5, 0);
     weight_data_size = pd.get(6, 0);
 
+    if(pad_w == -233 && pad_h == -233 && kernel_w%2 == 1 && kernel_h%2 == 1) {
+        pad_w = kernel_w-stride_w;
+        pad_h = kernel_h-stride_h;
+    }
+
     return 0;
 }
 
@@ -61,7 +66,6 @@ int Deconvolution::forward(const Mat& bottom_blob, Mat& top_blob, const Option& 
 {
     // backward strided convolv with NxN kernel
     // value = value + bias
-
     int w = bottom_blob.w;
     int h = bottom_blob.h;
     int channels = bottom_blob.c;
@@ -74,13 +78,12 @@ int Deconvolution::forward(const Mat& bottom_blob, Mat& top_blob, const Option& 
 
     int outw = (w - 1) * stride_w + kernel_extent_w;
     int outh = (h - 1) * stride_h + kernel_extent_h;
-
     Mat top_blob_bordered;
     if (pad_w > 0 || pad_h > 0)
     {
         top_blob_bordered.create(outw, outh, num_output, elemsize, opt.workspace_allocator);
-        if (top_blob_bordered.empty())
-            return -100;
+       if (top_blob_bordered.empty())
+     return -100;
     }
     else
     {
@@ -149,7 +152,13 @@ int Deconvolution::forward(const Mat& bottom_blob, Mat& top_blob, const Option& 
 
     if (pad_w > 0 || pad_h > 0)
     {
-        copy_cut_border(top_blob_bordered, top_blob, pad_h, pad_h, pad_w, pad_w, opt.blob_allocator, opt.num_threads);
+        //copy_cut_border(top_blob_bordered, top_blob, pad_h, pad_h, pad_w, pad_w, opt.blob_allocator, opt.num_threads);
+        int pad_h_top = pad_h/2;
+        int pad_h_down = pad_h-pad_h_top;
+        int pad_w_left = pad_w/2;
+        int pad_w_right = pad_w-pad_w_left;
+        copy_cut_border(top_blob_bordered, top_blob, pad_h_top, pad_h_down, pad_w_left, pad_w_right,
+                        opt.blob_allocator, opt.num_threads);
         if (top_blob.empty())
             return -100;
 
