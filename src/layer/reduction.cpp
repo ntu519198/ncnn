@@ -65,6 +65,11 @@ static int reduction_op(const Mat& a, Mat& b, float v0, int dim, float coeff, co
         // w h c -> X h c
         b.create(h, channels, elemsize, opt.blob_allocator);
     }
+    else if (dim == 3)
+    {
+        // w h c -> w h c
+        b.create(w, h, channels, elemsize, opt.blob_allocator);
+    }
     else if (dim == -1)
     {
         // w h c -> w X X
@@ -141,6 +146,27 @@ static int reduction_op(const Mat& a, Mat& b, float v0, int dim, float coeff, co
                 outptr[i] = sum * coeff;
 
                 ptr += w;
+            }
+        }
+    }
+    else if (dim == 3)
+    {
+        #pragma omp parallel for num_threads(opt.num_threads)
+        for (int q=0; q<channels; q++)
+        {
+            const float* ptr = a.channel(q);
+            float* outptr = b.channel(q);
+
+            for (int i=0; i<h; i++)
+            {
+                for (int j=0; j<w; j++)
+                {
+                    float sum = v0;
+                    sum = op(sum, ptr[j]);
+                    outptr[j] = op2(sum, coeff);
+                }
+                ptr += w;
+                outptr += w;
             }
         }
     }
@@ -291,7 +317,6 @@ int Reduction::forward(const Mat& bottom_blob, Mat& top_blob, const Option& opt)
 
     if (operation == ReductionOp_MAX)
         return reduction_op< reduction_op_max<float>, reduction_op_max<float> >(bottom_blob, top_blob, -FLT_MAX, dim, coeff, opt);
-
     if (operation == ReductionOp_MIN)
         return reduction_op< reduction_op_min<float>, reduction_op_min<float> >(bottom_blob, top_blob, FLT_MAX, dim, coeff, opt);
 

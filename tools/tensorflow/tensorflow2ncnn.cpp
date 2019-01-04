@@ -68,6 +68,23 @@ static bool find_tensor_proto(const std::map<std::string, tensorflow::TensorProt
     return false;
 }
 
+static bool find_tensor_protos(const std::map<std::string, tensorflow::TensorProto>& weights,
+                               const tensorflow::NodeDef& node, std::vector<tensorflow::TensorProto>& tensors)
+{
+    for (int j=0; j<node.input_size(); j++)
+    {
+        const std::string& input_name = node.input(j);
+
+        const std::map<std::string, tensorflow::TensorProto>::const_iterator it = weights.find(input_name);
+        if (it != weights.end())
+        {
+            tensors.push_back(it->second);
+        }
+    }
+
+    return !tensors.empty();
+}
+
 static bool get_tensor_proto(const std::map<std::string, tensorflow::TensorProto>& consts,
                              const tensorflow::NodeDef& node, tensorflow::TensorProto& tensor)
 {
@@ -111,7 +128,6 @@ static int parse_tensor_reduction_dim(const tensorflow::TensorProto& tensor)
     {
         const int* data = reinterpret_cast<const int*>(tensor.tensor_content().c_str());
         int size = tensor.tensor_content().size() / sizeof(int);
-
         // n h w c
         // n h w
         // n w
@@ -126,7 +142,20 @@ static int parse_tensor_reduction_dim(const tensorflow::TensorProto& tensor)
     }
     else
     {
-        int axis = tensor.int_val(0);
+        int axis = -1;
+        if(tensor.dtype() == 1) {
+            axis = tensor.float_val(0);
+            dim = 3;
+            return dim;
+        }
+        else if(tensor.dtype() == 3) {
+            axis = tensor.int_val(0);
+        }
+        else {
+            fprintf(stderr, "Unknown dtype\n");
+            exit(1);
+        }
+
         if (axis == 1)
             dim = 0;
         else if (axis == 3)
@@ -333,6 +362,10 @@ int main(int argc, char** argv)
         {
             fprintf(pp, "%-16s", "Convolution");
         }
+        else if (node.op() == "Conv2DBackpropInput")
+        {
+            fprintf(pp, "%-16s", "Deconvolution");
+        }
         else if (node.op() == "DepthwiseConv2dNative")
         {
             fprintf(pp, "%-16s", "ConvolutionDepthWise");
@@ -487,9 +520,7 @@ int main(int argc, char** argv)
                 input_size--;
             }
         }
-
         fprintf(pp, " %-32s %d 1", node.name().c_str(), input_size);
-
         for (int j=0; j<node.input_size(); j++)
         {
             std::string input_name = node.input(j);
@@ -509,9 +540,9 @@ int main(int argc, char** argv)
                 input_name = input_name + splitsuffix;
             }
 
+
             fprintf(pp, " %s", input_name.c_str());
         }
-
         fprintf(pp, " %s", node.name().c_str());
 
         if (node.op() == "Add" || node.op() == "BiasAdd")
@@ -778,6 +809,121 @@ int main(int argc, char** argv)
                                 for (int j=0; j<kernel_size_w; j++)
                                 {
                                     tmp = data[i*kernel_size_w*num_input*num_output + j*num_input*num_output + q*num_output + p];
+                                    fwrite(&tmp, sizeof(float), 1, bp);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            fprintf(pp, " 0=%d", num_output);
+            fprintf(pp, " 1=%d", kernel_size_w);
+            fprintf(pp, " 11=%d", kernel_size_h);
+            fprintf(pp, " 2=%d", dilation_w);
+            fprintf(pp, " 12=%d", dilation_h);
+            fprintf(pp, " 3=%d", stride_w);
+            fprintf(pp, " 13=%d", stride_h);
+            fprintf(pp, " 4=%d", pad);
+            fprintf(pp, " 5=%d", bias_term);
+            fprintf(pp, " 6=%d", weight_data_size);
+        }
+        else if (node.op() == "Conv2DBackpropInput")
+        {
+            // weights
+            std::vector<tensorflow::TensorProto> tensors;
+            find_tensor_protos(weights, node, tensors);
+
+            const tensorflow::TensorProto tensor = tensors[1];
+            const tensorflow::TensorShapeProto& shape = tensor.tensor_shape();
+
+            int kernel_size_h = shape.dim(0).size();
+            int kernel_size_w = shape.dim(1).size();
+            int num_output = shape.dim(2).size();
+            int num_input = shape.dim(3).size();
+
+            int stride_h = 1;
+            int stride_w = 1;
+            int dilation_h = 1;
+            int dilation_w = 1;
+            int pad = 0;
+
+            tensorflow::AttrValue value_strides;
+            if (find_attr_value(node, "strides", value_strides))
+            {
+                // batch, height, width, channels
+                stride_h = value_strides.list().i(1);
+                stride_w = value_strides.list().i(2);
+            }
+
+            tensorflow::AttrValue value_padding;
+            if (find_attr_value(node, "padding", value_padding))
+            {
+                if (value_padding.s() == "VALID")
+                {
+                    pad = 0;
+                }
+                else if (value_padding.s() == "SAME")
+                {
+                    pad = -233;
+                }
+            }
+
+            tensorflow::AttrValue value_rate;
+            if (find_attr_value(node, "rate", value_rate))
+            {
+                // height, width
+                dilation_h = value_rate.list().i(0);
+                dilation_w = value_rate.list().i(1);
+            }
+
+            int bias_term = 0;
+            int weight_data_size = 0;
+
+            // reorder h-w-o-i to o-i-h-w
+            if (!tensor.tensor_content().empty())
+            {
+                int quantize_tag = 0;
+                fwrite(&quantize_tag, sizeof(int), 1, bp);
+
+                if (tensor.dtype() == 1)// float
+                {
+                    const float* data = reinterpret_cast<const float*>(tensor.tensor_content().c_str());
+                    weight_data_size = tensor.tensor_content().size() / sizeof(float);
+
+                    float tmp;
+                    for (int p=0; p<num_output; p++)
+                    {
+                        for (int q=0; q<num_input; q++)
+                        {
+                            for (int i=0; i<kernel_size_h; i++)
+                            {
+                                for (int j=0; j<kernel_size_w; j++)
+                                {
+                                    //tmp = data[i*kernel_size_w*num_input*num_output + j*num_input*num_output + q*num_output + p];
+                                    tmp = data[i*kernel_size_w*num_input*num_output + j*num_input*num_output + p*num_input + q];
+                                    fwrite(&tmp, sizeof(float), 1, bp);
+                                }
+                            }
+                        }
+                    }
+                }
+                else if (tensor.dtype() == 3)// int32
+                {
+                    const int* data = reinterpret_cast<const int*>(tensor.tensor_content().c_str());
+                    weight_data_size = tensor.tensor_content().size() / sizeof(int);
+
+                    float tmp;
+                    for (int p=0; p<num_output; p++)
+                    {
+                        for (int q=0; q<num_input; q++)
+                        {
+                            for (int i=0; i<kernel_size_h; i++)
+                            {
+                                for (int j=0; j<kernel_size_w; j++)
+                                {
+                                    //tmp = data[i*kernel_size_w*num_input*num_output + j*num_input*num_output + q*num_output + p];
+                                    tmp = data[i*kernel_size_w*num_input*num_output + j*num_input*num_output + p*num_input + q];
                                     fwrite(&tmp, sizeof(float), 1, bp);
                                 }
                             }
