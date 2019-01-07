@@ -17,8 +17,6 @@ static int detect_impunet(const char* param_path, const char* bin_path, const cv
     ncnn::Net impunet;
     impunet.load_param(param_path);
     impunet.load_model(bin_path);
-    //impunet.load_param("impunet_v1.2.param");
-    //impunet.load_model("impunet_v1.2.bin");
 
     ncnn::Mat in = ncnn::Mat::from_pixels_resize(bgr.data, ncnn::Mat::PIXEL_BGR, bgr.cols, bgr.rows, 2048, 1024);
     multiply(in, 1.0/255);
@@ -29,13 +27,13 @@ static int detect_impunet(const char* param_path, const char* bin_path, const cv
 
     ncnn::Mat out;
     ex.extract("output", out);
+
     multiply(out, 255);
 
     unsigned char* pixels = new unsigned char[out.total()];
     out.to_pixels(pixels, ncnn::Mat::PIXEL_BGR);
 
     bgr_out = cv::Mat(out.h, out.w, CV_8UC3, pixels);
-
     return 0;
 }
 
@@ -62,9 +60,6 @@ int main(int argc, char** argv)
     detect_impunet(param_path, bin_path, m, m_out);
 
     const char* outputpath = argv[4];
-    int w = m_out.cols;
-    int h = m_out.rows;
-    int c = m_out.channels();
     cv::imwrite(outputpath, m_out);
 
     return 0;

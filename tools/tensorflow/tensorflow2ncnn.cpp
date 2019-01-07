@@ -370,6 +370,10 @@ int main(int argc, char** argv)
         {
             fprintf(pp, "%-16s", "ConvolutionDepthWise");
         }
+        else if (node.op() == "ResizeNearestNeighbor")
+        {
+            fprintf(pp, "%-16s", "Interp");
+        }
         else if (node.op() == "Div" || node.op() == "RealDiv")
         {
             fprintf(pp, "%-16s", "BinaryOp");
@@ -1058,6 +1062,18 @@ int main(int argc, char** argv)
             fprintf(pp, " 5=%d", bias_term);
             fprintf(pp, " 6=%d", weight_data_size);
             fprintf(pp, " 7=%d", group);
+        }
+        else if (node.op() == "ResizeNearestNeighbor")
+        {
+            // weights
+            tensorflow::TensorProto tensor;
+            find_tensor_proto(weights, node, tensor);
+
+            const int* output_size = reinterpret_cast<const int*>(tensor.tensor_content().c_str());
+            int resize_type = 1;
+            fprintf(pp, " 0=%d", resize_type);
+            fprintf(pp, " 3=%d", output_size[0]);
+            fprintf(pp, " 4=%d", output_size[1]);
         }
         else if (node.op() == "Div" || node.op() == "RealDiv")
         {

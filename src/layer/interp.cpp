@@ -44,6 +44,8 @@ int Interp::forward(const Mat &bottom_blob, Mat &top_blob, const Option& opt) co
 
     int oh = output_height;
     int ow = output_width;
+    float hscale = height_scale;
+    float wscale = width_scale;
     if (bottom_blob.dims == 1)
     {
         h = 1;
@@ -52,8 +54,15 @@ int Interp::forward(const Mat &bottom_blob, Mat &top_blob, const Option& opt) co
     }
     if (oh == 0 || ow == 0)
     {
-        oh = h * height_scale;
-        ow = w * width_scale;
+        //oh = h * height_scale;
+        //ow = w * width_scale;
+        oh = h * hscale;
+        ow = w * wscale;
+    }
+    else
+    {
+        hscale = int(oh/h);
+        wscale = int(ow/w);
     }
     if (oh == h && ow == w)
     {
@@ -85,14 +94,20 @@ int Interp::forward(const Mat &bottom_blob, Mat &top_blob, const Option& opt) co
             float *output_ptr = top_blob.channel(q);
             for (int y = 0; y < oh; ++y)
             {
-                const int in_y = std::min((int) (y / height_scale), (h - 1));
-                for (int x = 0; x < ow; ++x)
+                const int in_y = std::min((int) (y / hscale), (h - 1));
+                for (int x = 0; x < ow; x += wscale)
                 {
-                    const int in_x = std::min((int) (x / width_scale), (w - 1));
-                    output_ptr[ow * y + x] = ptr[in_y * w + in_x];
+                    const int in_x = std::min((int) (x / wscale), (w - 1));
+                    const float tmp = ptr[in_y * w + in_x];
+                    for(int i=0; i<wscale; i++)
+                    {
+                        output_ptr[x+i] = tmp;
+                    }
                 }
+                output_ptr += ow;
             }
         }
+
         return 0;
 
     }
