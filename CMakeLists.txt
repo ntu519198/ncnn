@@ -27,7 +27,7 @@ option(NCNN_OPENMP "openmp support" ON)
 option(NCNN_STDIO "load model from external file" ON)
 option(NCNN_STRING "plain and verbose string" ON)
 option(NCNN_OPENCV "minimal opencv structure emulation" OFF)
-option(NCNN_BENCHMARK "print benchmark information for every layer" OFF)
+option(NCNN_BENCHMARK "print benchmark information for every layer" ON)
 option(NCNN_PIXEL "convert and resize from/to image pixel" ON)
 option(NCNN_PIXEL_ROTATE "rotate image pixel orientation" OFF)
 option(NCNN_CMAKE_VERBOSE "print verbose cmake messages" OFF)
@@ -83,7 +83,8 @@ endif()
 
 ##############################################
 
-# add_subdirectory(examples)
+add_subdirectory(examples)
+add_subdirectory(test)
 # add_subdirectory(benchmark)
 add_subdirectory(src)
 if(NOT ANDROID AND NOT IOS)

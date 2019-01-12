@@ -75,6 +75,8 @@ public:
     bool empty() const;
     size_t total() const;
 
+    bool equals(const Mat& m) const;
+
     // data reference
     Mat channel(int c);
     const Mat channel(int c) const;
@@ -260,6 +262,28 @@ inline Mat::Mat(int _w, int _h, int _c, void* _data, size_t _elemsize, Allocator
 inline Mat::~Mat()
 {
     release();
+}
+
+inline bool Mat::equals(const Mat& m) const
+{
+    if(dims != m.dims || w != m.w || h != m.h || c != m.c || cstep != m.cstep) return false;
+    for(int q=0; q<c; ++q)
+    {
+        const float* ptr = channel(q);
+        const float* mptr = m.channel(q);
+        for(int i=0; i<h; ++i)
+        {
+            for(int j=0; j<w; ++j)
+            {
+                if(ptr[j] != mptr[j])
+                    return false;
+            }
+            ptr += w;
+            mptr += w;
+        }
+    }
+
+    return true;
 }
 
 inline Mat& Mat::operator=(const Mat& m)

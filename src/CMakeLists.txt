@@ -20,6 +20,7 @@ set(ncnn_SRCS
     opencv.cpp
     paramdict.cpp
     benchmark.cpp
+    util.cpp
 )
 
 macro(ncnn_add_layer class)
@@ -173,6 +174,7 @@ install(FILES
     mat.h
     modelbin.h
     net.h
+    util.h
     opencv.h
     paramdict.h
     benchmark.h
