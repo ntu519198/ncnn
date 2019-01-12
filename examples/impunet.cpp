@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <algorithm>
 #include <vector>
+#include <string>
 #include <opencv2/core/core.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/highgui/highgui.hpp>
@@ -36,13 +37,15 @@ static int detect_impunet(const char* param_path, const char* bin_path,
 
     ex.input(input_name, in);
     ex.extract(output_name, out);
+
     multiply(out, 255);
 
     unsigned char* pixels = new unsigned char[out.total()];
     out.to_pixels(pixels, ncnn::Mat::PIXEL_RGB);
 
     m_out = cv::Mat(out.h, out.w, CV_8UC3, pixels);
-    // Convert BGR image to RGB
+
+    // Convert RGB image to BGR
     cvtColor(m_out, m_out, CV_RGB2BGR);
     return 0;
 }
@@ -63,6 +66,14 @@ int main(int argc, char** argv)
     const char* outputpath = argv[4];
     const char* input_name = argv[5];
     const char* output_name = argv[6];
+    const std::string outputpath_str = std::string(outputpath);
+    const std::string extension =
+        outputpath_str.substr(outputpath_str.length()-4);
+    if (extension != ".png")
+    {
+        fprintf(stderr, "Output path must be png file");
+        exit(1);
+    }
 
     cv::Mat m = cv::imread(imagepath, CV_LOAD_IMAGE_COLOR);
     cv::Mat m_out;
@@ -76,6 +87,5 @@ int main(int argc, char** argv)
                    input_name, output_name);
 
     cv::imwrite(outputpath, m_out);
-
     return 0;
 }
