@@ -1,0 +1,121 @@
+7767517
+119 136
+Input            input                            0 1 input 0=0 1=0 2=0
+Split            splitncnn_0                      1 3 input input_splitncnn_0 input_splitncnn_1 input_splitncnn_2
+MemoryData       prelu_0/prelu/read               0 1 prelu_0/prelu/read 0=1 1=0 2=0
+Reduction        prelu_0/Maximum                  1 1 input_splitncnn_2 prelu_0/Maximum 0=4 1=3 2=0.000000
+Reduction        prelu_0/Minimum                  1 1 input_splitncnn_1 prelu_0/Minimum 0=5 1=3 2=0.000000
+BinaryOp         prelu_0/mul                      2 1 prelu_0/prelu/read prelu_0/Minimum prelu_0/mul 0=2
+BinaryOp         prelu_0/add                      2 1 prelu_0/Maximum prelu_0/mul prelu_0/add 0=0
+Padding          MirrorPad                        1 1 prelu_0/add MirrorPad 0=2 1=2 2=4 3=4 4=2 5=0.000000
+ConvolutionDepthWise separable_conv2d/depthwise       1 1 MirrorPad separable_conv2d/depthwise 0=3 1=9 11=5 2=1 12=1 3=4 13=4 4=0 5=0 6=135 7=3
+Convolution      separable_conv2d                 1 1 separable_conv2d/depthwise separable_conv2d 0=8 1=1 11=1 2=1 12=1 3=1 13=1 4=0 5=0 6=24
+Split            splitncnn_1                      1 3 separable_conv2d separable_conv2d_splitncnn_0 separable_conv2d_splitncnn_1 separable_conv2d_splitncnn_2
+MemoryData       prelu_1/prelu/read               0 1 prelu_1/prelu/read 0=1 1=0 2=0
+Reduction        prelu_1/Maximum                  1 1 separable_conv2d_splitncnn_2 prelu_1/Maximum 0=4 1=3 2=0.000000
+Reduction        prelu_1/Minimum                  1 1 separable_conv2d_splitncnn_1 prelu_1/Minimum 0=5 1=3 2=0.000000
+BinaryOp         prelu_1/mul                      2 1 prelu_1/prelu/read prelu_1/Minimum prelu_1/mul 0=2
+BinaryOp         prelu_1/add                      2 1 prelu_1/Maximum prelu_1/mul prelu_1/add 0=0
+Padding          MirrorPad_1                      1 1 prelu_1/add MirrorPad_1 0=2 1=2 2=4 3=4 4=2 5=0.000000
+ConvolutionDepthWise separable_conv2d_1/depthwise     1 1 MirrorPad_1 separable_conv2d_1/depthwise 0=8 1=9 11=5 2=1 12=1 3=4 13=4 4=0 5=0 6=360 7=8
+Convolution      separable_conv2d_1               1 1 separable_conv2d_1/depthwise separable_conv2d_1 0=16 1=1 11=1 2=1 12=1 3=1 13=1 4=0 5=0 6=128
+Split            splitncnn_2                      1 3 separable_conv2d_1 separable_conv2d_1_splitncnn_0 separable_conv2d_1_splitncnn_1 separable_conv2d_1_splitncnn_2
+MemoryData       prelu_2/prelu/read               0 1 prelu_2/prelu/read 0=1 1=0 2=0
+Reduction        prelu_2/Maximum                  1 1 separable_conv2d_1_splitncnn_2 prelu_2/Maximum 0=4 1=3 2=0.000000
+Reduction        prelu_2/Minimum                  1 1 separable_conv2d_1_splitncnn_1 prelu_2/Minimum 0=5 1=3 2=0.000000
+BinaryOp         prelu_2/mul                      2 1 prelu_2/prelu/read prelu_2/Minimum prelu_2/mul 0=2
+BinaryOp         prelu_2/add                      2 1 prelu_2/Maximum prelu_2/mul prelu_2/add 0=0
+Padding          MirrorPad_2                      1 1 prelu_2/add MirrorPad_2 0=1 1=1 2=2 3=2 4=2 5=0.000000
+ConvolutionDepthWise separable_conv2d_2/depthwise     1 1 MirrorPad_2 separable_conv2d_2/depthwise 0=16 1=5 11=3 2=1 12=1 3=2 13=2 4=0 5=0 6=240 7=16
+Convolution      separable_conv2d_2               1 1 separable_conv2d_2/depthwise separable_conv2d_2 0=32 1=1 11=1 2=1 12=1 3=1 13=1 4=0 5=0 6=512
+Split            splitncnn_3                      1 3 separable_conv2d_2 separable_conv2d_2_splitncnn_0 separable_conv2d_2_splitncnn_1 separable_conv2d_2_splitncnn_2
+MemoryData       prelu_3/prelu/read               0 1 prelu_3/prelu/read 0=1 1=0 2=0
+Reduction        prelu_3/Maximum                  1 1 separable_conv2d_2_splitncnn_2 prelu_3/Maximum 0=4 1=3 2=0.000000
+Reduction        prelu_3/Minimum                  1 1 separable_conv2d_2_splitncnn_1 prelu_3/Minimum 0=5 1=3 2=0.000000
+BinaryOp         prelu_3/mul                      2 1 prelu_3/prelu/read prelu_3/Minimum prelu_3/mul 0=2
+BinaryOp         prelu_3/add                      2 1 prelu_3/Maximum prelu_3/mul prelu_3/add 0=0
+Padding          MirrorPad_3                      1 1 prelu_3/add MirrorPad_3 0=1 1=1 2=2 3=2 4=2 5=0.000000
+ConvolutionDepthWise separable_conv2d_3/depthwise     1 1 MirrorPad_3 separable_conv2d_3/depthwise 0=32 1=5 11=3 2=1 12=1 3=2 13=2 4=0 5=0 6=480 7=32
+Convolution      separable_conv2d_3               1 1 separable_conv2d_3/depthwise separable_conv2d_3 0=64 1=1 11=1 2=1 12=1 3=1 13=1 4=0 5=0 6=2048
+Split            splitncnn_4                      1 3 separable_conv2d_3 separable_conv2d_3_splitncnn_0 separable_conv2d_3_splitncnn_1 separable_conv2d_3_splitncnn_2
+MemoryData       prelu_4/prelu/read               0 1 prelu_4/prelu/read 0=1 1=0 2=0
+Reduction        prelu_4/Maximum                  1 1 separable_conv2d_3_splitncnn_2 prelu_4/Maximum 0=4 1=3 2=0.000000
+Reduction        prelu_4/Minimum                  1 1 separable_conv2d_3_splitncnn_1 prelu_4/Minimum 0=5 1=3 2=0.000000
+BinaryOp         prelu_4/mul                      2 1 prelu_4/prelu/read prelu_4/Minimum prelu_4/mul 0=2
+BinaryOp         prelu_4/add                      2 1 prelu_4/Maximum prelu_4/mul prelu_4/add 0=0
+Padding          MirrorPad_4                      1 1 prelu_4/add MirrorPad_4 0=1 1=1 2=2 3=2 4=2 5=0.000000
+ConvolutionDepthWise separable_conv2d_4/depthwise     1 1 MirrorPad_4 separable_conv2d_4/depthwise 0=64 1=5 11=3 2=1 12=1 3=2 13=2 4=0 5=0 6=960 7=64
+Convolution      separable_conv2d_4               1 1 separable_conv2d_4/depthwise separable_conv2d_4 0=64 1=1 11=1 2=1 12=1 3=1 13=1 4=0 5=0 6=4096
+Split            splitncnn_5                      1 2 separable_conv2d_4 separable_conv2d_4_splitncnn_0 separable_conv2d_4_splitncnn_1
+MemoryData       prelu_5/prelu/read               0 1 prelu_5/prelu/read 0=1 1=0 2=0
+Reduction        prelu_5/Maximum                  1 1 separable_conv2d_4_splitncnn_1 prelu_5/Maximum 0=4 1=3 2=0.000000
+Reduction        prelu_5/Minimum                  1 1 separable_conv2d_4_splitncnn_0 prelu_5/Minimum 0=5 1=3 2=0.000000
+BinaryOp         prelu_5/mul                      2 1 prelu_5/prelu/read prelu_5/Minimum prelu_5/mul 0=2
+BinaryOp         prelu_5/add                      2 1 prelu_5/Maximum prelu_5/mul prelu_5/add 0=0
+Padding          MirrorPad_5                      1 1 prelu_5/add MirrorPad_5 0=1 1=1 2=2 3=2 4=2 5=0.000000
+ConvolutionDepthWise separable_conv2d_5/depthwise     1 1 MirrorPad_5 separable_conv2d_5/depthwise 0=64 1=5 11=3 2=1 12=1 3=2 13=2 4=0 5=0 6=960 7=64
+Convolution      separable_conv2d_5               1 1 separable_conv2d_5/depthwise separable_conv2d_5 0=64 1=1 11=1 2=1 12=1 3=1 13=1 4=0 5=0 6=4096
+Split            splitncnn_6                      1 2 separable_conv2d_5 separable_conv2d_5_splitncnn_0 separable_conv2d_5_splitncnn_1
+MemoryData       prelu_6/prelu/read               0 1 prelu_6/prelu/read 0=1 1=0 2=0
+Reduction        prelu_6/Maximum                  1 1 separable_conv2d_5_splitncnn_1 prelu_6/Maximum 0=4 1=3 2=0.000000
+Reduction        prelu_6/Minimum                  1 1 separable_conv2d_5_splitncnn_0 prelu_6/Minimum 0=5 1=3 2=0.000000
+BinaryOp         prelu_6/mul                      2 1 prelu_6/prelu/read prelu_6/Minimum prelu_6/mul 0=2
+BinaryOp         prelu_6/add                      2 1 prelu_6/Maximum prelu_6/mul prelu_6/add 0=0
+ConvolutionDepthWise cons_6/separable_conv2d/depthwise 1 1 prelu_6/add cons_6/separable_conv2d/depthwise 0=64 1=8 11=4 2=1 12=1 3=1 13=1 4=0 5=0 6=2048 7=64
+Convolution      cons_6/separable_conv2d          1 1 cons_6/separable_conv2d/depthwise cons_6/separable_conv2d 0=64 1=1 11=1 2=1 12=1 3=1 13=1 4=0 5=0 6=4096
+Split            splitncnn_7                      1 2 cons_6/separable_conv2d cons_6/separable_conv2d_splitncnn_0 cons_6/separable_conv2d_splitncnn_1
+MemoryData       prelu_7/prelu/read               0 1 prelu_7/prelu/read 0=1 1=0 2=0
+Reduction        prelu_7/Maximum                  1 1 cons_6/separable_conv2d_splitncnn_1 prelu_7/Maximum 0=4 1=3 2=0.000000
+Reduction        prelu_7/Minimum                  1 1 cons_6/separable_conv2d_splitncnn_0 prelu_7/Minimum 0=5 1=3 2=0.000000
+BinaryOp         prelu_7/mul                      2 1 prelu_7/prelu/read prelu_7/Minimum prelu_7/mul 0=2
+BinaryOp         prelu_7/add                      2 1 prelu_7/Maximum prelu_7/mul prelu_7/add 0=0
+ConvolutionDepthWise cons_7/separable_conv2d/depthwise 1 1 prelu_7/add cons_7/separable_conv2d/depthwise 0=64 1=1 11=1 2=1 12=1 3=1 13=1 4=0 5=0 6=64 7=64
+Convolution      cons_7/separable_conv2d          1 1 cons_7/separable_conv2d/depthwise cons_7/separable_conv2d 0=64 1=1 11=1 2=1 12=1 3=1 13=1 4=0 5=0 6=4096
+Tile             Tile                             1 1 cons_7/separable_conv2d Tile 0=16 1=32 2=1
+Concat           concat                           2 1 separable_conv2d_3_splitncnn_0 Tile concat
+Padding          Zoom_2_2/MirrorPad               1 1 concat Zoom_2_2/MirrorPad 0=1 1=1 2=2 3=2 4=2 5=0.000000
+ConvolutionDepthWise Zoom_2_2/separable_conv2d/depthwise 1 1 Zoom_2_2/MirrorPad Zoom_2_2/separable_conv2d/depthwise 0=128 1=5 11=3 2=1 12=1 3=1 13=1 4=0 5=0 6=1920 7=128
+Convolution      Zoom_2_2/separable_conv2d        1 1 Zoom_2_2/separable_conv2d/depthwise Zoom_2_2/separable_conv2d 0=32 1=1 11=1 2=1 12=1 3=1 13=1 4=0 5=0 6=4096
+Interp           Zoom_2_2/resize_images/ResizeNearestNeighbor 1 1 Zoom_2_2/separable_conv2d Zoom_2_2/resize_images/ResizeNearestNeighbor 0=1 3=32 4=64
+Split            splitncnn_8                      1 2 Zoom_2_2/resize_images/ResizeNearestNeighbor Zoom_2_2/resize_images/ResizeNearestNeighbor_splitncnn_0 Zoom_2_2/resize_images/ResizeNearestNeighbor_splitncnn_1
+MemoryData       Zoom_2_2/prelu/prelu/read        0 1 Zoom_2_2/prelu/prelu/read 0=1 1=0 2=0
+Reduction        Zoom_2_2/prelu/Maximum           1 1 Zoom_2_2/resize_images/ResizeNearestNeighbor_splitncnn_1 Zoom_2_2/prelu/Maximum 0=4 1=3 2=0.000000
+Reduction        Zoom_2_2/prelu/Minimum           1 1 Zoom_2_2/resize_images/ResizeNearestNeighbor_splitncnn_0 Zoom_2_2/prelu/Minimum 0=5 1=3 2=0.000000
+BinaryOp         Zoom_2_2/prelu/mul               2 1 Zoom_2_2/prelu/prelu/read Zoom_2_2/prelu/Minimum Zoom_2_2/prelu/mul 0=2
+BinaryOp         Zoom_2_2/prelu/add               2 1 Zoom_2_2/prelu/Maximum Zoom_2_2/prelu/mul Zoom_2_2/prelu/add 0=0
+Concat           concat_1                         2 1 Zoom_2_2/prelu/add separable_conv2d_2_splitncnn_0 concat_1
+Padding          Zoom_2_3/MirrorPad               1 1 concat_1 Zoom_2_3/MirrorPad 0=1 1=1 2=2 3=2 4=2 5=0.000000
+ConvolutionDepthWise Zoom_2_3/separable_conv2d/depthwise 1 1 Zoom_2_3/MirrorPad Zoom_2_3/separable_conv2d/depthwise 0=64 1=5 11=3 2=1 12=1 3=1 13=1 4=0 5=0 6=960 7=64
+Convolution      Zoom_2_3/separable_conv2d        1 1 Zoom_2_3/separable_conv2d/depthwise Zoom_2_3/separable_conv2d 0=16 1=1 11=1 2=1 12=1 3=1 13=1 4=0 5=0 6=1024
+Interp           Zoom_2_3/resize_images/ResizeNearestNeighbor 1 1 Zoom_2_3/separable_conv2d Zoom_2_3/resize_images/ResizeNearestNeighbor 0=1 3=64 4=128
+Split            splitncnn_9                      1 2 Zoom_2_3/resize_images/ResizeNearestNeighbor Zoom_2_3/resize_images/ResizeNearestNeighbor_splitncnn_0 Zoom_2_3/resize_images/ResizeNearestNeighbor_splitncnn_1
+MemoryData       Zoom_2_3/prelu/prelu/read        0 1 Zoom_2_3/prelu/prelu/read 0=1 1=0 2=0
+Reduction        Zoom_2_3/prelu/Maximum           1 1 Zoom_2_3/resize_images/ResizeNearestNeighbor_splitncnn_1 Zoom_2_3/prelu/Maximum 0=4 1=3 2=0.000000
+Reduction        Zoom_2_3/prelu/Minimum           1 1 Zoom_2_3/resize_images/ResizeNearestNeighbor_splitncnn_0 Zoom_2_3/prelu/Minimum 0=5 1=3 2=0.000000
+BinaryOp         Zoom_2_3/prelu/mul               2 1 Zoom_2_3/prelu/prelu/read Zoom_2_3/prelu/Minimum Zoom_2_3/prelu/mul 0=2
+BinaryOp         Zoom_2_3/prelu/add               2 1 Zoom_2_3/prelu/Maximum Zoom_2_3/prelu/mul Zoom_2_3/prelu/add 0=0
+Concat           concat_2                         2 1 separable_conv2d_1_splitncnn_0 Zoom_2_3/prelu/add concat_2
+Padding          Zoom_4_0/MirrorPad               1 1 concat_2 Zoom_4_0/MirrorPad 0=2 1=2 2=4 3=4 4=2 5=0.000000
+ConvolutionDepthWise Zoom_4_0/separable_conv2d/depthwise 1 1 Zoom_4_0/MirrorPad Zoom_4_0/separable_conv2d/depthwise 0=32 1=9 11=5 2=1 12=1 3=1 13=1 4=0 5=0 6=1440 7=32
+Convolution      Zoom_4_0/separable_conv2d        1 1 Zoom_4_0/separable_conv2d/depthwise Zoom_4_0/separable_conv2d 0=8 1=1 11=1 2=1 12=1 3=1 13=1 4=0 5=0 6=256
+Interp           Zoom_4_0/resize_images/ResizeNearestNeighbor 1 1 Zoom_4_0/separable_conv2d Zoom_4_0/resize_images/ResizeNearestNeighbor 0=1 3=256 4=512
+Split            splitncnn_10                     1 2 Zoom_4_0/resize_images/ResizeNearestNeighbor Zoom_4_0/resize_images/ResizeNearestNeighbor_splitncnn_0 Zoom_4_0/resize_images/ResizeNearestNeighbor_splitncnn_1
+MemoryData       Zoom_4_0/prelu/prelu/read        0 1 Zoom_4_0/prelu/prelu/read 0=1 1=0 2=0
+Reduction        Zoom_4_0/prelu/Maximum           1 1 Zoom_4_0/resize_images/ResizeNearestNeighbor_splitncnn_1 Zoom_4_0/prelu/Maximum 0=4 1=3 2=0.000000
+Reduction        Zoom_4_0/prelu/Minimum           1 1 Zoom_4_0/resize_images/ResizeNearestNeighbor_splitncnn_0 Zoom_4_0/prelu/Minimum 0=5 1=3 2=0.000000
+BinaryOp         Zoom_4_0/prelu/mul               2 1 Zoom_4_0/prelu/prelu/read Zoom_4_0/prelu/Minimum Zoom_4_0/prelu/mul 0=2
+BinaryOp         Zoom_4_0/prelu/add               2 1 Zoom_4_0/prelu/Maximum Zoom_4_0/prelu/mul Zoom_4_0/prelu/add 0=0
+Concat           concat_3                         2 1 Zoom_4_0/prelu/add separable_conv2d_splitncnn_0 concat_3
+Padding          Zoom_4_1/MirrorPad               1 1 concat_3 Zoom_4_1/MirrorPad 0=2 1=2 2=4 3=4 4=2 5=0.000000
+ConvolutionDepthWise Zoom_4_1/separable_conv2d/depthwise 1 1 Zoom_4_1/MirrorPad Zoom_4_1/separable_conv2d/depthwise 0=16 1=9 11=5 2=1 12=1 3=1 13=1 4=0 5=0 6=720 7=16
+Convolution      Zoom_4_1/separable_conv2d        1 1 Zoom_4_1/separable_conv2d/depthwise Zoom_4_1/separable_conv2d 0=3 1=1 11=1 2=1 12=1 3=1 13=1 4=0 5=0 6=48
+Interp           Zoom_4_1/resize_images/ResizeNearestNeighbor 1 1 Zoom_4_1/separable_conv2d Zoom_4_1/resize_images/ResizeNearestNeighbor 0=1 3=1024 4=2048
+Split            splitncnn_11                     1 2 Zoom_4_1/resize_images/ResizeNearestNeighbor Zoom_4_1/resize_images/ResizeNearestNeighbor_splitncnn_0 Zoom_4_1/resize_images/ResizeNearestNeighbor_splitncnn_1
+MemoryData       Zoom_4_1/prelu/prelu/read        0 1 Zoom_4_1/prelu/prelu/read 0=1 1=0 2=0
+Reduction        Zoom_4_1/prelu/Maximum           1 1 Zoom_4_1/resize_images/ResizeNearestNeighbor_splitncnn_1 Zoom_4_1/prelu/Maximum 0=4 1=3 2=0.000000
+Reduction        Zoom_4_1/prelu/Minimum           1 1 Zoom_4_1/resize_images/ResizeNearestNeighbor_splitncnn_0 Zoom_4_1/prelu/Minimum 0=5 1=3 2=0.000000
+BinaryOp         Zoom_4_1/prelu/mul               2 1 Zoom_4_1/prelu/prelu/read Zoom_4_1/prelu/Minimum Zoom_4_1/prelu/mul 0=2
+BinaryOp         Zoom_4_1/prelu/add               2 1 Zoom_4_1/prelu/Maximum Zoom_4_1/prelu/mul Zoom_4_1/prelu/add 0=0
+ConvolutionDepthWise cons_last/separable_conv2d/depthwise 1 1 Zoom_4_1/prelu/add cons_last/separable_conv2d/depthwise 0=3 1=1 11=1 2=1 12=1 3=1 13=1 4=-233 5=0 6=3 7=3
+Convolution      cons_last/separable_conv2d       1 1 cons_last/separable_conv2d/depthwise cons_last/separable_conv2d 0=3 1=1 11=1 2=1 12=1 3=1 13=1 4=0 5=0 6=9
+BinaryOp         output                           2 1 cons_last/separable_conv2d input_splitncnn_0 output 0=0
