@@ -188,7 +188,6 @@ int main(int argc, char** argv)
     fprintf(pp, "7767517\n");
 
     int node_count = graph.node_size();
-
 //     fprintf(stderr, "node_count = %d\n\n", node_count);
 
     // node reference
@@ -370,6 +369,10 @@ int main(int argc, char** argv)
         {
             fprintf(pp, "%-16s", "ConvolutionDepthWise");
         }
+        else if (node.op() == "Tile")
+        {
+            fprintf(pp, "%-16s", "Tile");
+        }
         else if (node.op() == "ResizeNearestNeighbor")
         {
             fprintf(pp, "%-16s", "Interp");
@@ -457,7 +460,7 @@ int main(int argc, char** argv)
         {
             continue;
         }
-        else if (node.op() == "Pad")
+        else if (node.op() == "Pad" || node.op() == "MirrorPad")
         {
             fprintf(pp, "%-16s", "Padding");
         }
@@ -1063,6 +1066,34 @@ int main(int argc, char** argv)
             fprintf(pp, " 6=%d", weight_data_size);
             fprintf(pp, " 7=%d", group);
         }
+        else if (node.op() == "Tile")
+        {
+            int h_tiles = 1;
+            int w_tiles = 1;
+            int c_tiles = 1;
+
+            tensorflow::TensorProto tensor;
+            if (find_tensor_proto(weights, node, tensor))
+            {
+                const tensorflow::TensorShapeProto& shape = tensor.tensor_shape();
+                if (!tensor.tensor_content().empty() && tensor.dtype() == 3)
+                {
+                    const int* data = reinterpret_cast<const int*>(tensor.tensor_content().c_str());
+                    int size = tensor.tensor_content().size() / sizeof(int);
+
+                    if (size == 4)
+                    {
+                        h_tiles = data[1];
+                        w_tiles = data[2];
+                        c_tiles = data[3];
+                    }
+                }
+            }
+            fprintf(pp, " 0=%d", h_tiles);
+            fprintf(pp, " 1=%d", w_tiles);
+            fprintf(pp, " 2=%d", c_tiles);
+
+        }
         else if (node.op() == "ResizeNearestNeighbor")
         {
             // weights
@@ -1217,6 +1248,10 @@ int main(int argc, char** argv)
                 float coeff = 1.f;
 
                 dim = parse_tensor_reduction_dim(tensor);
+                if(tensor.tensor_content().empty())
+                {
+                    coeff = tensor.float_val(0);
+                }
 
                 fprintf(pp, " 0=%d", operation);
                 fprintf(pp, " 1=%d", dim);
@@ -1290,6 +1325,10 @@ int main(int argc, char** argv)
                 float coeff = 1.f;
 
                 dim = parse_tensor_reduction_dim(tensor);
+                if(tensor.tensor_content().empty())
+                {
+                    coeff = tensor.float_val(0);
+                }
 
                 fprintf(pp, " 0=%d", operation);
                 fprintf(pp, " 1=%d", dim);
@@ -1355,6 +1394,55 @@ int main(int argc, char** argv)
                 value = value_T.f();
             }
 
+            fprintf(pp, " 0=%d", top);
+            fprintf(pp, " 1=%d", bottom);
+            fprintf(pp, " 2=%d", left);
+            fprintf(pp, " 3=%d", right);
+            fprintf(pp, " 4=%d", type);
+            fprintf(pp, " 5=%f", value);
+        }
+        else if (node.op() == "MirrorPad")
+        {
+            int top = 0;
+            int bottom = 0;
+            int left = 0;
+            int right = 0;
+            int type = 0;
+            float value = 0.f;
+
+            // check weights
+            tensorflow::TensorProto tensor;
+            if (find_tensor_proto(weights, node, tensor))
+            {
+                if (!tensor.tensor_content().empty() && tensor.dtype() == 3)// int32
+                {
+                    const int *data = reinterpret_cast<const int*>(tensor.tensor_content().c_str());
+                    int size = tensor.tensor_content().size() / sizeof(int);
+
+                    if (size == 8)
+                    {
+                        // n h w c
+                        top = data[2];
+                        bottom = data[3];
+                        left = data[4];
+                        right = data[5];
+                    }
+                }
+            }
+
+            tensorflow::AttrValue value_mode;
+            if (find_attr_value(node, "mode", value_mode))
+            {
+                if (value_mode.s() == "SYMMETRIC") {
+                    type = 2;
+                }
+                else {
+                    fprintf(stderr, "Mirror Pad with mode %s "
+                                    "is not supported yet.\n",
+                            value_mode.s().c_str());
+                    exit(1);
+                }
+            }
             fprintf(pp, " 0=%d", top);
             fprintf(pp, " 1=%d", bottom);
             fprintf(pp, " 2=%d", left);

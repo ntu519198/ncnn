@@ -30,7 +30,9 @@ public:
 
 public:
     int dim;
-    int tiles;
+    int h_tiles;
+    int w_tiles;
+    int c_tiles;
 };
 
 } // namespace ncnn

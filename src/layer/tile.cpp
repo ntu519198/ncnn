@@ -26,8 +26,10 @@ Tile::Tile()
 
 int Tile::load_param(const ParamDict& pd)
 {
-    dim = pd.get(0, 0);
-    tiles = pd.get(1, 1);
+    h_tiles = pd.get(0, 1);
+    w_tiles = pd.get(1, 1);
+    c_tiles = pd.get(2, 1);
+    dim = 3;
 
     return 0;
 }
@@ -39,9 +41,10 @@ int Tile::forward(const Mat& bottom_blob, Mat& top_blob, const Option& opt) cons
     int channels = bottom_blob.c;
     size_t elemsize = bottom_blob.elemsize;
 
+    // TODO: Check why bottom_blob's cstep == 4
     if (dim == 0)
     {
-        top_blob.create(w, h, channels * tiles, elemsize, opt.blob_allocator);
+        top_blob.create(w, h, channels * c_tiles, elemsize, opt.blob_allocator);
         if (top_blob.empty())
             return -100;
 
@@ -49,7 +52,7 @@ int Tile::forward(const Mat& bottom_blob, Mat& top_blob, const Option& opt) cons
         int size = bottom_blob.cstep * channels;
 
         #pragma omp parallel for num_threads(opt.num_threads)
-        for (int p=0; p<tiles; p++)
+        for (int p=0; p<c_tiles; p++)
         {
             float* outptr = top_blob.channel(p * channels);
 
@@ -61,7 +64,7 @@ int Tile::forward(const Mat& bottom_blob, Mat& top_blob, const Option& opt) cons
     }
     else if (dim == 1)
     {
-        top_blob.create(w, h * tiles, channels, elemsize, opt.blob_allocator);
+        top_blob.create(w, h * h_tiles, channels, elemsize, opt.blob_allocator);
         if (top_blob.empty())
             return -100;
 
@@ -73,7 +76,7 @@ int Tile::forward(const Mat& bottom_blob, Mat& top_blob, const Option& opt) cons
             const float* ptr = bottom_blob.channel(q);
             float* outptr = top_blob.channel(q);
 
-            for (int p=0; p<tiles; p++)
+            for (int p=0; p<h_tiles; p++)
             {
                 for (int i=0; i<size; i++)
                 {
@@ -86,7 +89,7 @@ int Tile::forward(const Mat& bottom_blob, Mat& top_blob, const Option& opt) cons
     }
     else if (dim == 2)
     {
-        top_blob.create(w * tiles, h, channels, elemsize, opt.blob_allocator);
+        top_blob.create(w * w_tiles, h, channels, elemsize, opt.blob_allocator);
         if (top_blob.empty())
             return -100;
 
@@ -98,7 +101,7 @@ int Tile::forward(const Mat& bottom_blob, Mat& top_blob, const Option& opt) cons
 
             for (int i = 0; i < h; i++)
             {
-                for (int p=0; p<tiles; p++)
+                for (int p=0; p<w_tiles; p++)
                 {
                     for (int j = 0; j < w; j++)
                     {
@@ -112,6 +115,38 @@ int Tile::forward(const Mat& bottom_blob, Mat& top_blob, const Option& opt) cons
             }
         }
     }
+    else
+    {
+        top_blob.create(w * w_tiles, h * h_tiles, channels * c_tiles,
+                        elemsize, opt.blob_allocator);
+
+        if (top_blob.empty())
+            return -100;
+
+        const float* ptr = bottom_blob.channel(0);
+
+        for (int q=0; q<channels; ++q)
+        {
+            float* outptr = top_blob.channel(q);
+            for (int ht=0; ht < h_tiles; ++ht)
+            {
+                const float* ptr = bottom_blob.channel(q);
+                for (int i=0; i<h; ++i)
+                {
+                    for (int wt=0; wt<w_tiles; ++wt)
+                    {
+                        for (int j=0; j<w; ++j)
+                        {
+                            outptr[j] = ptr[j];
+                        }
+                        outptr += w;
+                    }
+                    ptr += w;
+                }
+            }
+        }
+    }
+
 
     return 0;
 }

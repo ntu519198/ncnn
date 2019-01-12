@@ -180,6 +180,52 @@ static void copy_make_border_image(const Mat& src, Mat& dst, int top, int left, 
             outptr += w;
         }
     }
+    else if (type == 2)
+    {
+        int y = top;
+        // Center
+        for (; y < (top + src.h); ++y)
+        {
+            int x = 0;
+            // Center-Left
+            for (; x < left; ++x)
+            {
+                outptr[y*w+x] = ptr[(y-top)*src.w+(left-1-x)];
+            }
+            // Center-Center
+            for (; x < (left+src.w); ++x)
+            {
+                outptr[y*w+x] = ptr[(y-top)*src.w+(x-left)];
+            }
+            // Center-Right
+            for (; x < w; ++ x)
+            {
+                outptr[y*w+x] = ptr[(y-top)*src.w+(left+2*src.w-1-x)];
+            }
+        }
+
+        // Top
+        y = 0;
+        for (; y < top; ++y)
+        {
+            int x = 0;
+            for (; x < w; ++x)
+            {
+                outptr[y*w+x] = outptr[(2*top-1-y)*w+x];
+            }
+        }
+
+        // Bottom
+        y = top+src.h;
+        for (; y < h; ++y)
+        {
+            int x = 0;
+            for (; x < w; ++x)
+            {
+                outptr[y*w+x] = outptr[(2*(top+src.h)-1-y)*w+x];
+            }
+        }
+    }
 }
 
 int Padding::forward(const Mat& bottom_blob, Mat& top_blob, const Option& opt) const
