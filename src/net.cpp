@@ -412,12 +412,16 @@ int Net::load_param(const char* protopath, bool isbin, bool keepname)
         rewind(fp);
 
         buffer = (unsigned char *)malloc((filelen+1)*sizeof(unsigned char));
-        fread(buffer, filelen, 1, fp);
-        load_param(buffer, keepname);
+        ret = fread(buffer, filelen, 1, fp);
+        if(ret != 1)
+        {
+            return -1;
+        }
+        ret = load_param(buffer, keepname);
     }
     else
     {
-        load_param(fp);
+        ret = load_param(fp);
     }
 
     fclose(fp);
@@ -653,6 +657,7 @@ int Net::load_param(const unsigned char* _mem, bool keepname)
             memcpy(layer_type, mem, 32);
             mem += 32;
             memcpy(layer_name, mem, 256);
+            //printf("%s\n", layer_type);
             mem += 256;
         }
 
@@ -850,7 +855,6 @@ Layer* Net::create_custom_layer(int index)
 int Net::forward_layer(int layer_index, std::vector<Mat>& blob_mats, Option& opt) const
 {
     const Layer* layer = layers[layer_index];
-
 //     fprintf(stderr, "forward_layer %d %s\n", layer_index, layer->name.c_str());
 
     if (layer->one_blob_only)
