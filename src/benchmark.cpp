@@ -19,6 +19,16 @@
 #include <sys/time.h>
 #endif // _WIN32
 
+
+#ifdef __ANDROID__
+#define LOG_TAG "IMPUNET/Benchmark"
+#include <android/log.h>
+#define LOGD(...) __android_log_print(ANDROID_LOG_DEBUG, LOG_TAG, __VA_ARGS__)
+#else
+#define LOGD(...) fprintf(stderr, __VA_ARGS__); fprintf(stderr,"\n");
+#endif
+
+
 #include "benchmark.h"
 
 #if NCNN_BENCHMARK
@@ -28,6 +38,7 @@
 #include "layer/deconvolution.h"
 #include "layer/deconvolutiondepthwise.h"
 #endif // NCNN_BENCHMARK
+
 
 namespace ncnn {
 
@@ -55,52 +66,97 @@ double get_current_time()
 
 void benchmark(const Layer* layer, double start, double end)
 {
-    fprintf(stderr, "%-24s %-24s %8.2lfms", layer->type.c_str(), layer->name.c_str(), end - start);
-    fprintf(stderr, "    |");
-    fprintf(stderr, "\n");
+    //fprintf(stderr, "%-24s %-24s %8.2lfms", layer->type.c_str(), layer->name.c_str(), end - start);
+    //fprintf(stderr, "    |");
+    //fprintf(stderr, "\n");
+    const char* type = layer->type.c_str();
+    const char* name = layer->name.c_str();
+    const char format[4096] = "%-24s %-24s %8.2lfms    |";
+    LOGD(format, type, name, end - start);
 }
 
 void benchmark(const Layer* layer, const Mat& bottom_blob, Mat& top_blob, double start, double end)
 {
-    fprintf(stderr, "%-24s %-24s %8.2lfms", layer->type.c_str(), layer->name.c_str(), end - start);
-    fprintf(stderr, "    |    feature_map: %4d x %-4d    inch: %4d    outch: %4d", bottom_blob.w, bottom_blob.h, bottom_blob.c, top_blob.c);
+    //fprintf(stderr, "%-24s %-24s %8.2lfms", layer->type.c_str(), layer->name.c_str(), end - start);
+    //fprintf(stderr, "    |    feature_map: %4d x %-4d    inch: %4d    outch: %4d", bottom_blob.w, bottom_blob.h, bottom_blob.c, top_blob.c);
+    const char* type = layer->type.c_str();
+    const char* name = layer->name.c_str();
+    char format[4096] = "%-24s %-24s %8.2lfms    |"
+                        "feature_map: %4d x %-4d    inch: %4d    outch: %4d";
     if (layer->type == "Convolution")
     {
-        fprintf(stderr, "     kernel: %1d x %1d     stride: %1d x %1d",
-                ((Convolution*)layer)->kernel_w,
-                ((Convolution*)layer)->kernel_h,
-                ((Convolution*)layer)->stride_w,
-                ((Convolution*)layer)->stride_h
+        //fprintf(stderr, "     kernel: %1d x %1d     stride: %1d x %1d",
+        //        ((Convolution*)layer)->kernel_w,
+        //        ((Convolution*)layer)->kernel_h,
+        //        ((Convolution*)layer)->stride_w,
+        //        ((Convolution*)layer)->stride_h
+        //);
+        strcat(format, "     kernel: %1d x %1d     stride: %1d x %1d");
+        LOGD(format, type, name, end - start,
+             bottom_blob.w, bottom_blob.h, bottom_blob.c, top_blob.c,
+             ((Convolution*)layer)->kernel_w,
+             ((Convolution*)layer)->kernel_h,
+             ((Convolution*)layer)->stride_w,
+             ((Convolution*)layer)->stride_h
         );
     }
     else if (layer->type == "ConvolutionDepthWise")
     {
-        fprintf(stderr, "     kernel: %1d x %1d     stride: %1d x %1d",
-                ((ConvolutionDepthWise*)layer)->kernel_w,
-                ((ConvolutionDepthWise*)layer)->kernel_h,
-                ((ConvolutionDepthWise*)layer)->stride_w,
-                ((ConvolutionDepthWise*)layer)->stride_h
+        //fprintf(stderr, "     kernel: %1d x %1d     stride: %1d x %1d",
+        //        ((ConvolutionDepthWise*)layer)->kernel_w,
+        //        ((ConvolutionDepthWise*)layer)->kernel_h,
+        //        ((ConvolutionDepthWise*)layer)->stride_w,
+        //        ((ConvolutionDepthWise*)layer)->stride_h
+        //);
+        strcat(format, "     kernel: %1d x %1d     stride: %1d x %1d");
+        LOGD(format, type, name, end - start,
+             bottom_blob.w, bottom_blob.h, bottom_blob.c, top_blob.c,
+             ((ConvolutionDepthWise*)layer)->kernel_w,
+             ((ConvolutionDepthWise*)layer)->kernel_h,
+             ((ConvolutionDepthWise*)layer)->stride_w,
+             ((ConvolutionDepthWise*)layer)->stride_h
         );
     }
     else if (layer->type == "Deconvolution")
     {
-        fprintf(stderr, "     kernel: %1d x %1d     stride: %1d x %1d",
-                ((Deconvolution*)layer)->kernel_w,
-                ((Deconvolution*)layer)->kernel_h,
-                ((Deconvolution*)layer)->stride_w,
-                ((Deconvolution*)layer)->stride_h
+        //fprintf(stderr, "     kernel: %1d x %1d     stride: %1d x %1d",
+        //        ((Deconvolution*)layer)->kernel_w,
+        //        ((Deconvolution*)layer)->kernel_h,
+        //        ((Deconvolution*)layer)->stride_w,
+        //        ((Deconvolution*)layer)->stride_h
+        //);
+        strcat(format, "     kernel: %1d x %1d     stride: %1d x %1d");
+        LOGD(format, type, name, end - start,
+             bottom_blob.w, bottom_blob.h, bottom_blob.c, top_blob.c,
+             ((Deconvolution*)layer)->kernel_w,
+             ((Deconvolution*)layer)->kernel_h,
+             ((Deconvolution*)layer)->stride_w,
+             ((Deconvolution*)layer)->stride_h
         );
     }
     else if (layer->type == "DeconvolutionDepthWise")
     {
-        fprintf(stderr, "     kernel: %1d x %1d     stride: %1d x %1d",
-                ((DeconvolutionDepthWise*)layer)->kernel_w,
-                ((DeconvolutionDepthWise*)layer)->kernel_h,
-                ((DeconvolutionDepthWise*)layer)->stride_w,
-                ((DeconvolutionDepthWise*)layer)->stride_h
+        //fprintf(stderr, "     kernel: %1d x %1d     stride: %1d x %1d",
+        //        ((DeconvolutionDepthWise*)layer)->kernel_w,
+        //        ((DeconvolutionDepthWise*)layer)->kernel_h,
+        //        ((DeconvolutionDepthWise*)layer)->stride_w,
+        //        ((DeconvolutionDepthWise*)layer)->stride_h
+        //);
+        strcat(format, "     kernel: %1d x %1d     stride: %1d x %1d");
+        LOGD(format, type, name, end - start,
+             bottom_blob.w, bottom_blob.h, bottom_blob.c, top_blob.c,
+             ((DeconvolutionDepthWise*)layer)->kernel_w,
+             ((DeconvolutionDepthWise*)layer)->kernel_h,
+             ((DeconvolutionDepthWise*)layer)->stride_w,
+             ((DeconvolutionDepthWise*)layer)->stride_h
         );
     }
-    fprintf(stderr, "\n");
+    else {
+        LOGD(format, type, name, end - start,
+             bottom_blob.w, bottom_blob.h, bottom_blob.c, top_blob.c
+        );
+    }
+    //fprintf(stderr, "\n");
 }
 
 #endif // NCNN_BENCHMARK
