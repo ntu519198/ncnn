@@ -74,7 +74,7 @@ static bool vstr_is_float(const char vstr[16])
     return false;
 }
 
-static int dump_param(const char* parampath, const char* parambinpath, const char* idcpppath)
+static int dump_param(const char* parampath, const char* parambinpath, const char* idcpppath, bool keepname)
 {
     FILE* fp = fopen(parampath, "rb");
 
@@ -121,6 +121,12 @@ static int dump_param(const char* parampath, const char* parambinpath, const cha
 
         int typeindex = ncnn::layer_to_index(layer_type);
         fwrite(&typeindex, sizeof(int), 1, mp);
+
+        if(keepname)
+        {
+            fwrite(layer_type, sizeof(char)*32, 1, mp);
+            fwrite(layer_name, sizeof(char)*256, 1, mp);
+        }
 
         fwrite(&bottom_count, sizeof(int), 1, mp);
         fwrite(&top_count, sizeof(int), 1, mp);
@@ -312,9 +318,9 @@ static int write_memcpp(const char* parambinpath, const char* modelpath, const c
 
 int main(int argc, char** argv)
 {
-    if (argc != 5)
+    if (argc != 5 && argc != 6)
     {
-        fprintf(stderr, "Usage: %s [ncnnproto] [ncnnbin] [idcpppath] [memcpppath]\n", argv[0]);
+        fprintf(stderr, "Usage: %s [ncnnproto] [ncnnbin] [idcpppath] [memcpppath] [keepname]\n", argv[0]);
         return -1;
     }
 
@@ -322,13 +328,20 @@ int main(int argc, char** argv)
     const char* modelpath = argv[2];
     const char* idcpppath = argv[3];
     const char* memcpppath = argv[4];
+    bool keepname =  false;
+
+    if (argc == 6 && !strcmp(argv[5], "keepname"))
+    {
+        keepname = true;
+    }
 
     const char* lastslash = strrchr(parampath, '/');
-    const char* name = lastslash == NULL ? parampath : lastslash + 1;
+    //const char* name = lastslash == NULL ? parampath : lastslash + 1;
+    const char* name = parampath;
 
-    std::string parambinpath = std::string(name) + ".bin";
+    std::string parambinpath = keepname? std::string(name) + "_keepname.bin" : std::string(name) + ".bin";
 
-    dump_param(parampath, parambinpath.c_str(), idcpppath);
+    dump_param(parampath, parambinpath.c_str(), idcpppath, keepname);
 
     write_memcpp(parambinpath.c_str(), modelpath, memcpppath);
 

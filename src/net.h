@@ -47,7 +47,7 @@ public:
     // load network structure from plain param file
     // return 0 if success
     int load_param(FILE* fp);
-    int load_param(const char* protopath);
+    int load_param(const char* protopath, bool isbin=false, bool keepname=false);
     int load_param_mem(const char* mem);
 #endif // NCNN_STRING
     // load network structure from binary param file
@@ -64,7 +64,7 @@ public:
     // load network structure from external memory
     // memory pointer must be 32-bit aligned
     // return bytes consumed
-    int load_param(const unsigned char* mem);
+    int load_param(const unsigned char* mem, bool keepname=false);
 
     // reference network weight data from external memory
     // weight data is not copied but referenced

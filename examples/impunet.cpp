@@ -16,14 +16,15 @@ static void multiply(ncnn::Mat& m, float multiplier) {
 
 static int detect_impunet(const char* param_path, const char* bin_path,
                           const cv::Mat& m_in, cv::Mat& m_out,
-                          const char* input_name, const char* output_name)
+                          const char* input_name, const char* output_name,
+                          const bool isbin, const bool keepname)
 {
     const int h = m_in.rows;
     const int w = m_in.cols;
     const int color_format = ncnn::Mat::PIXEL_RGB;
 
     ncnn::Net impunet;
-    impunet.load_param(param_path);
+    impunet.load_param(param_path, isbin, keepname);
     impunet.load_model(bin_path);
 
     // Convert BGR image to RGB
@@ -35,8 +36,16 @@ static int detect_impunet(const char* param_path, const char* bin_path,
     ncnn::Extractor ex = impunet.create_extractor();
     ncnn::Mat out;
 
-    ex.input(input_name, in);
-    ex.extract(output_name, out);
+    if(isbin)
+    {
+        ex.input(0, in);
+        ex.extract(135, out);
+    }
+    else
+    {
+        ex.input(input_name, in);
+        ex.extract(output_name, out);
+    }
 
     multiply(out, 255);
 
@@ -52,11 +61,12 @@ static int detect_impunet(const char* param_path, const char* bin_path,
 
 int main(int argc, char** argv)
 {
-    if (argc != 7)
+    if (argc != 7 && argc != 8 && argc !=9)
     {
         fprintf(stderr, "Usage: %s [parampath] [binpath] "
                         "[imagepath] [outputpath] "
-                        "[input_name] [output_name]\n", argv[0]);
+                        "[input_name] [output_name] "
+                        "[isbin] [keepname]\n", argv[0]);
         return -1;
     }
 
@@ -66,6 +76,18 @@ int main(int argc, char** argv)
     const char* outputpath = argv[4];
     const char* input_name = argv[5];
     const char* output_name = argv[6];
+    bool isbin = false;
+    bool keepname = false;
+
+    if (argc >= 8)
+    {
+        isbin = !strcmp(argv[7], "isbin");
+        if (argc == 9)
+        {
+            keepname = !strcmp(argv[8], "keepname");
+        }
+    }
+
     const std::string outputpath_str = std::string(outputpath);
     const std::string extension =
         outputpath_str.substr(outputpath_str.length()-4);
@@ -84,7 +106,8 @@ int main(int argc, char** argv)
     }
 
     detect_impunet(param_path, bin_path, m, m_out,
-                   input_name, output_name);
+                   input_name, output_name,
+                   isbin, keepname);
 
     cv::imwrite(outputpath, m_out);
     return 0;

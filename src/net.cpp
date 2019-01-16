@@ -392,7 +392,7 @@ int Net::load_param_mem(const char* _mem)
 
     return 0;
 }
-int Net::load_param(const char* protopath)
+int Net::load_param(const char* protopath, bool isbin, bool keepname)
 {
     FILE* fp = fopen(protopath, "rb");
     if (!fp)
@@ -401,7 +401,24 @@ int Net::load_param(const char* protopath)
         return -1;
     }
 
-    int ret = load_param(fp);
+    int ret;
+    if (isbin)
+    {
+        unsigned char *buffer;
+        long filelen;
+
+        fseek(fp, 0, SEEK_END);
+        filelen = ftell(fp);
+        rewind(fp);
+
+        buffer = (unsigned char *)malloc((filelen+1)*sizeof(unsigned char));
+        fread(buffer, filelen, 1, fp);
+        load_param(buffer, keepname);
+    }
+    else
+    {
+        load_param(fp);
+    }
 
     fclose(fp);
 
@@ -590,7 +607,7 @@ int Net::load_model(const char* modelpath)
 }
 #endif // NCNN_STDIO
 
-int Net::load_param(const unsigned char* _mem)
+int Net::load_param(const unsigned char* _mem, bool keepname)
 {
     if ((unsigned long)_mem & 0x3)
     {
@@ -629,6 +646,16 @@ int Net::load_param(const unsigned char* _mem)
         int typeindex = *(int*)mem;
         mem += 4;
 
+        char layer_type[33];
+        char layer_name[257];
+        if (keepname)
+        {
+            memcpy(layer_type, mem, 32);
+            mem += 32;
+            memcpy(layer_name, mem, 256);
+            mem += 256;
+        }
+
         int bottom_count = *(int*)mem;
         mem += 4;
 
@@ -636,6 +663,11 @@ int Net::load_param(const unsigned char* _mem)
         mem += 4;
 
         Layer* layer = create_layer(typeindex);
+        if (keepname)
+        {
+            layer->type = std::string(layer_type);
+            layer->name = std::string(layer_name);
+        }
         if (!layer)
         {
             int custom_index = typeindex & ~LayerType::CustomBit;
