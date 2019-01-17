@@ -64,6 +64,12 @@ double get_current_time()
 
 #if NCNN_BENCHMARK
 
+void benchmark(double start, double end, const char* prefix)
+{
+    const char format[4096] = "%s%.2lfms";
+    LOGD(format, prefix, end-start);
+}
+
 void benchmark(const Layer* layer, double start, double end)
 {
     //fprintf(stderr, "%-24s %-24s %8.2lfms", layer->type.c_str(), layer->name.c_str(), end - start);

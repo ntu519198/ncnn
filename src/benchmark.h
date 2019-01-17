@@ -26,6 +26,7 @@ double get_current_time();
 
 #if NCNN_BENCHMARK
 
+void benchmark(double start, double end, const char* prefix="");
 void benchmark(const Layer* layer, double start, double end);
 void benchmark(const Layer* layer, const Mat& bottom_blob, Mat& top_blob, double start, double end);
 

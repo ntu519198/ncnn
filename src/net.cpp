@@ -1051,7 +1051,14 @@ int Extractor::extract(int blob_index, Mat& feat)
     if (blob_mats[blob_index].dims == 0)
     {
         int layer_index = net->blobs[blob_index].producer;
+#if NCNN_BENCHMARK
+        double start = get_current_time();
         ret = net->forward_layer(layer_index, blob_mats, opt);
+        double end = get_current_time();
+        benchmark(start, end, "Elapsed time: ");
+#else
+        ret = net->forward_layer(layer_index, blob_mats, opt);
+#endif // NCNN_BENCHMARK
     }
 
     feat = blob_mats[blob_index];
@@ -1082,7 +1089,14 @@ int Extractor::extract(const char* blob_name, Mat& feat)
     if (blob_mats[blob_index].dims == 0)
     {
         int layer_index = net->blobs[blob_index].producer;
+#if NCNN_BENCHMARK
+        double start = get_current_time();
         ret = net->forward_layer(layer_index, blob_mats, opt);
+        double end = get_current_time();
+        benchmark(start, end, "Elapsed time: ");
+#else
+        ret = net->forward_layer(layer_index, blob_mats, opt);
+#endif
     }
 
     feat = blob_mats[blob_index];
