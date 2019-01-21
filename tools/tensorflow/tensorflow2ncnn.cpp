@@ -167,9 +167,16 @@ static int parse_tensor_reduction_dim(const tensorflow::TensorProto& tensor)
 
 int main(int argc, char** argv)
 {
+    if (argc != 4)
+    {
+        fprintf(stderr, "Usage: %s [pb] [param] [bin]\n", argv[0]);
+        return -1;
+    }
     const char* tensorflowpb = argv[1];
-    const char* ncnn_prototxt = argc >= 4 ? argv[2] : "ncnn.proto";
-    const char* ncnn_modelbin = argc >= 4 ? argv[3] : "ncnn.bin";
+    const char* ncnn_prototxt = argv[2];
+    const char* ncnn_modelbin = argv[3];
+    //const char* ncnn_prototxt = argc >= 4 ? argv[2] : "ncnn.proto";
+    //const char* ncnn_modelbin = argc >= 4 ? argv[3] : "ncnn.bin";
 
     tensorflow::GraphDef graph;
 
