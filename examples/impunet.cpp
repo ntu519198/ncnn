@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <string.h>
 #include <algorithm>
 #include <vector>
 #include <string>
@@ -39,7 +40,7 @@ static int detect_impunet(const char* param_path, const char* bin_path,
     if(isbin)
     {
         ex.input(0, in);
-        ex.extract(135, out);
+        ex.extract(atoi(output_name), out);
     }
     else
     {
