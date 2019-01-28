@@ -18,6 +18,7 @@
 #include "platform.h"
 #include "mat.h"
 #include "layer.h"
+#include "util.h"
 
 namespace ncnn {
 
