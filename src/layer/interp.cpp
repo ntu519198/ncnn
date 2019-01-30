@@ -87,6 +87,64 @@ int Interp::forward(const Mat &bottom_blob, Mat &top_blob, const Option& opt) co
 
     if (resize_type == 1)//nearest
     {
+        if(hscale == 4 && wscale == 4)
+        {
+            #pragma omp parallel for num_threads(opt.num_threads)
+            for (int q = 0; q < c; ++q)
+            {
+                const float *ptr = bottom_blob.channel(q);
+                float *output_ptr = top_blob.channel(q);
+                int in_y = 0;
+                for (int y = 0; y < oh; y += 4)
+                {
+                    for (int i=0; i < 4; ++i)
+                    {
+                        const float* tmp_ptr = ptr+in_y;
+                        for (int x = 0; x < ow; x += 4)
+                        {
+                            float tmp = *tmp_ptr;
+                            output_ptr[x] = tmp;
+                            output_ptr[x+1] = tmp;
+                            output_ptr[x+2] = tmp;
+                            output_ptr[x+3] = tmp;
+                            ++tmp_ptr;
+                        }
+                        output_ptr += ow;
+                    }
+                    in_y += w;
+                }
+            }
+            return 0;
+        }
+
+        if(hscale == 2 && wscale == 2)
+        {
+            #pragma omp parallel for num_threads(opt.num_threads)
+            for (int q = 0; q < c; ++q)
+            {
+                const float *ptr = bottom_blob.channel(q);
+                float *output_ptr = top_blob.channel(q);
+                int in_y = 0;
+                for (int y = 0; y < oh; y += 2)
+                {
+                    for (int i=0; i < 2; ++i)
+                    {
+                        const float* tmp_ptr = ptr+in_y;
+                        for (int x = 0; x < ow; x += 2)
+                        {
+                            float tmp = *tmp_ptr;
+                            output_ptr[x] = tmp;
+                            output_ptr[x+1] = tmp;
+                            ++tmp_ptr;
+                        }
+                        output_ptr += ow;
+                    }
+                    in_y += w;
+                }
+            }
+            return 0;
+        }
+
         #pragma omp parallel for num_threads(opt.num_threads)
         for (int q = 0; q < c; ++q)
         {
