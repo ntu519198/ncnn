@@ -354,6 +354,66 @@ static int binary_op(const Mat& a, const Mat& b, Mat& c, const Option& opt)
 }
 
 template<typename Op>
+static int binary_op_inplace(const Mat& a, const Mat& b, Mat& c, const Option& opt)
+{
+    Op op;
+
+    int w = a.w;
+    int h = a.h;
+    int channels = a.c;
+    int size = w * h;
+    size_t elemsize = a.elemsize;
+
+    int w1 = b.w;
+    int h1 = b.h;
+    int channels1 = b.c;
+    int size1 = w1 * h1;
+
+    c = a;
+    if (a.dims == 3)
+    {
+        if (b.dims == 3)
+        {
+            #pragma omp parallel for num_threads(opt.num_threads)
+            for (int q=0; q<channels; q++)
+            {
+                const float* ptr1 = b.channel(q);
+                float* outptr = c.channel(q);
+
+                for (int i=0; i<size; i++)
+                {
+                    outptr[i] = op(outptr[i], ptr1[i]);
+                }
+            }
+
+            return 0;
+        }
+
+        if (b.dims == 1)
+        {
+            if (b.w == 1)
+            {
+                const float b0 = b[0];
+                #pragma omp parallel for num_threads(opt.num_threads)
+                for (int q=0; q<channels; q++)
+                {
+                    float* outptr = c.channel(q);
+
+                    for (int i=0; i<size; i++)
+                    {
+                        outptr[i] = op(outptr[i], b0);
+                    }
+                }
+
+                return 0;
+            }
+        }
+    }
+
+    return 0;
+}
+
+template<typename Op>
 static int binary_op_scalar_inplace(Mat& a, float b, const Option& opt)
 {
     Op op;
@@ -410,13 +470,15 @@ int BinaryOp::forward(const std::vector<Mat>& bottom_blobs, std::vector<Mat>& to
     Mat& top_blob = top_blobs[0];
 
     if (op_type == Operation_ADD)
-        return binary_op< std::plus<float> >(bottom_blob, bottom_blob1, top_blob, opt);
+        //return binary_op< std::plus<float> >(bottom_blob, bottom_blob1, top_blob, opt);
+        return binary_op_inplace< std::plus<float> >(bottom_blob, bottom_blob1, top_blob, opt);
 
     if (op_type == Operation_SUB)
         return binary_op< std::minus<float> >(bottom_blob, bottom_blob1, top_blob, opt);
 
     if (op_type == Operation_MUL)
-        return binary_op< std::multiplies<float> >(bottom_blob, bottom_blob1, top_blob, opt);
+        //return binary_op< std::multiplies<float> >(bottom_blob, bottom_blob1, top_blob, opt);
+        return binary_op_inplace< std::multiplies<float> >(bottom_blob, bottom_blob1, top_blob, opt);
 
     if (op_type == Operation_DIV)
         return binary_op< std::divides<float> >(bottom_blob, bottom_blob1, top_blob, opt);
