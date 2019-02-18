@@ -407,6 +407,21 @@ static int binary_op_inplace(const Mat& a, const Mat& b, Mat& c, const Option& o
 
                 return 0;
             }
+
+            #pragma omp parallel for num_threads(opt.num_threads)
+            for (int q=0; q<channels; q++)
+            {
+                const float* ptr = a.channel(q);
+                const float b0 = b[q];
+                float* outptr = c.channel(q);
+
+                for (int i=0; i<size; i++)
+                {
+                    outptr[i] = op(ptr[i], b0);
+                }
+            }
+
+            return 0;
         }
     }
 
@@ -477,8 +492,8 @@ int BinaryOp::forward(const std::vector<Mat>& bottom_blobs, std::vector<Mat>& to
         return binary_op< std::minus<float> >(bottom_blob, bottom_blob1, top_blob, opt);
 
     if (op_type == Operation_MUL)
-        //return binary_op< std::multiplies<float> >(bottom_blob, bottom_blob1, top_blob, opt);
-        return binary_op_inplace< std::multiplies<float> >(bottom_blob, bottom_blob1, top_blob, opt);
+        return binary_op< std::multiplies<float> >(bottom_blob, bottom_blob1, top_blob, opt);
+        //return binary_op_inplace< std::multiplies<float> >(bottom_blob, bottom_blob1, top_blob, opt);
 
     if (op_type == Operation_DIV)
         return binary_op< std::divides<float> >(bottom_blob, bottom_blob1, top_blob, opt);
