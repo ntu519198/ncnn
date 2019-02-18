@@ -317,6 +317,946 @@ int Convolution::forward(const Mat& bottom_blob, Mat& top_blob, const Option& op
         return 0;
     }
 
+//////
+#if 1
+    if (maxk == 15 && stride_h == 1 && stride_w == 1)
+    {
+        int cnt = 0;
+        int kernel_stride_w = (kernel_w/stride_w)*stride_w;
+        int kernel_max_w = (w-kernel_w)/stride_w*stride_w;
+        int max_n_w = 5;
+        int out_size = outh*outw;
+
+        #pragma omp parallel for num_threads(opt.num_threads)
+        for (int p=0; p<num_output; p++)
+        {
+            float* outptr = top_blob.channel(p);
+            const float* kptr = (const float*)weight_data + 15 * channels * p;
+            for (int s=0; s<out_size; s++)
+            {
+                outptr[s] = 0.0;
+            }
+
+            for (int q=0; q<channels; q++)
+            {
+                const Mat m = bottom_blob_bordered.channel(q);
+                for(int i=0; i<h; i++)
+                {
+                    int h_idx_out = i>=kernel_h? (i-kernel_h)/stride_h+1:0;
+                    int h_idx_in = i-h_idx_out*stride_h;
+
+                    for(; h_idx_out<outh && h_idx_in>=0; h_idx_out++, h_idx_in-=stride_h)
+                    {
+                        int j = 0;
+                        int base_out = h_idx_out*outw;
+                        int base_in = h_idx_in*kernel_w;
+                        int base = i*w;
+
+                        int n_w = 1;
+                        //outptr[h_idx_out*outw+w_idx_out] += m[i*w+j]*kptr[h_idx_in*9+w_idx_in];
+                        for(; j<kernel_stride_w; j+=stride_w)
+                        {
+                            for(int k_w=0; k_w<stride_w; k_w++)
+                            {
+                                int global_j = j+k_w;
+                                int kernel_j = global_j;
+                                float val = m[base+global_j];
+                                for(int kk_w=0; kk_w<n_w; kk_w++)
+                                {
+                                    outptr[base_out+kk_w] += val*kptr[base_in+kernel_j];
+                                    kernel_j -= stride_w;
+                                    //cnt++;
+                                }
+                            }
+                            n_w++;
+                        }
+                        for(; j<kernel_w; j++)
+                        {
+                            int kernel_j = j;
+                            float val = m[base+j];
+                            for(int kk_w=0; kk_w<max_n_w; kk_w++)
+                            {
+                                outptr[base_out+kk_w] += val*kptr[base_in+kernel_j];
+                                kernel_j -= stride_w;
+                                //cnt++;
+                            }
+                        }
+
+                        //////////////////////////////////////////
+                        int w_idx_out = 1;
+                        int w_idx_in = j-stride_w;
+                        for(; j<kernel_max_w; j+=stride_w)
+                        {
+                            float val0 = m[base+j];
+                            int idx = base_in+w_idx_in;
+                            int idx2 = base_out+w_idx_out;
+
+                            outptr[idx2+4] += val0*kptr[idx-4];
+
+                            outptr[idx2+3] += val0*kptr[idx-3];
+
+                            outptr[idx2+2] += val0*kptr[idx-2];
+
+                            outptr[idx2+1] += val0*kptr[idx-1];
+
+                            outptr[idx2] += val0*kptr[idx];
+
+                            w_idx_out++;
+                            //cnt+=5;
+                        }
+
+                        int ww = j+kernel_w;
+                        n_w--;
+                        ////////////////////////////////////////////
+                        int idx_in = base_in+w_idx_in;
+                        int idx_out = base_out+w_idx_out;
+                        int round = 0;
+
+                        for(; j<ww; j+=stride_w)
+                        {
+                            for(int k_w=0; k_w<stride_w; k_w++)
+                            {
+                                int global_j = j+k_w;
+                                int kernel_j = 0;
+                                float val = m[base+global_j];
+                                for(int kk_w=0; kk_w<n_w; kk_w++)
+                                {
+                                    outptr[idx_out+round+kk_w] += val*kptr[idx_in+kernel_j+k_w];
+                                    kernel_j -= stride_w;
+                                    //cnt++;
+                                }
+                            }
+                            round++;
+                            n_w--;
+                        }
+                    }
+                }
+            }
+        }
+        return 0;
+    }
+#endif
+
+//////
+#if 1
+    if (maxk == 15 && stride_h == 2 && stride_w == 2)
+    {
+        int cnt = 0;
+        int kernel_stride_w = (kernel_w/stride_w)*stride_w;
+        int kernel_max_w = (w-kernel_w)/stride_w*stride_w;
+        int num_n_w = 1;
+        int max_n_w = 3;
+        int out_size = outh*outw;
+
+        #pragma omp parallel for num_threads(opt.num_threads)
+        for (int p=0; p<num_output; p++)
+        {
+            float* outptr = top_blob.channel(p);
+            const float* kptr = (const float*)weight_data + 15 * channels * p;
+
+            for (int s=0; s<out_size; s++)
+            {
+                outptr[s] = 0.0;
+            }
+
+            for (int q=0; q<channels; q++)
+            {
+                const Mat m = bottom_blob_bordered.channel(q);
+                for(int i=0; i<h; i++)
+                {
+                    int h_idx_out = i>=kernel_h? (i-kernel_h)/stride_h+1:0;
+                    int h_idx_in = i-h_idx_out*stride_h;
+
+                    for(; h_idx_out<outh && h_idx_in>=0; h_idx_out++, h_idx_in-=stride_h)
+                    {
+                        int j = 0;
+                        int base_out = h_idx_out*outw;
+                        int base_in = h_idx_in*kernel_w;
+                        int base = i*w;
+
+                        int n_w = 1;
+                        //outptr[h_idx_out*outw+w_idx_out] += m[i*w+j]*kptr[h_idx_in*9+w_idx_in];
+                        for(; j<kernel_stride_w; j+=stride_w)
+                        {
+                            for(int k_w=0; k_w<stride_w; k_w++)
+                            {
+                                int global_j = j+k_w;
+                                int kernel_j = global_j;
+                                float val = m[base+global_j];
+                                for(int kk_w=0; kk_w<n_w; kk_w++)
+                                {
+                                    outptr[base_out+kk_w] += val*kptr[base_in+kernel_j];
+                                    kernel_j -= stride_w;
+                                    //cnt++;
+                                }
+                            }
+                            n_w++;
+                        }
+                        for(; j<kernel_w; j++)
+                        {
+                            int kernel_j = j;
+                            float val = m[base+j];
+                            for(int kk_w=0; kk_w<max_n_w; kk_w++)
+                            {
+                                outptr[base_out+kk_w] += val*kptr[base_in+kernel_j];
+                                kernel_j -= stride_w;
+                                //cnt++;
+                            }
+                        }
+
+                        //////////////////////////////////////////
+                        int w_idx_out = 1;
+                        int w_idx_in = j-stride_w;
+                        for(; j<kernel_max_w; j+=stride_w)
+                        {
+                            float val0 = m[base+j];
+                            float val1 = m[base+j+1];
+                            int idx = base_in+w_idx_in;
+                            int idx2 = base_out+w_idx_out;
+
+                            outptr[idx2+2] += val1*kptr[idx-3];
+
+                            outptr[idx2+1] += val0*kptr[idx-2];
+                            outptr[idx2+1] += val1*kptr[idx-1];
+
+                            outptr[idx2] += val0*kptr[idx];
+                            outptr[idx2] += val1*kptr[idx+1];
+
+                            w_idx_out++;
+                            //cnt+=5;
+                        }
+
+                        int ww = j+kernel_w;
+                        n_w--;
+                        ////////////////////////////////////////////
+                        int idx_in = base_in+w_idx_in;
+                        int idx_out = base_out+w_idx_out;
+                        int round = 0;
+
+                        for(; j<ww; j+=stride_w)
+                        {
+                            for(int k_w=0; k_w<stride_w; k_w++)
+                            {
+                                int global_j = j+k_w;
+                                int kernel_j = 0;
+                                float val = m[base+global_j];
+                                for(int kk_w=0; kk_w<n_w; kk_w++)
+                                {
+                                    outptr[idx_out+round+kk_w] += val*kptr[idx_in+kernel_j+k_w];
+                                    kernel_j -= stride_w;
+                                    //cnt++;
+                                }
+                            }
+                            round++;
+                            n_w--;
+                        }
+                    }
+                }
+            }
+        }
+        return 0;
+    }
+#endif
+
+//////
+#if 1
+    if (maxk == 45 && stride_h == 4 && stride_w == 4)
+    {
+        int cnt = 0;
+        //int kernel_stride_h = (kernel_h/stride_h)*stride_h;
+        //int kernel_max_h = (h-kernel_h)/stride_h*stride_h;
+        //int num_n_h = 3;
+        //int max_n_h = 2;
+
+        int kernel_stride_w = (kernel_w/stride_w)*stride_w;
+        int kernel_max_w = (w-kernel_w)/stride_w*stride_w;
+        int num_n_w = 3;
+        int max_n_w = 3;
+        int out_size = outh*outw;
+
+        #pragma omp parallel for num_threads(opt.num_threads)
+        for (int p=0; p<num_output; p++)
+        {
+            float* outptr = top_blob.channel(p);
+            const float* kptr = (const float*)weight_data + 45 * channels * p;
+
+            for (int s=0; s<out_size; s++)
+            {
+                outptr[s] = 0.0;
+            }
+
+            for (int q=0; q<channels; q++)
+            {
+                const Mat m = bottom_blob_bordered.channel(q);
+                for(int i=0; i<h; i++)
+                {
+                    int h_idx_out = i>=kernel_h? (i-kernel_h)/stride_h+1:0;
+                    int h_idx_in = i-h_idx_out*stride_h;
+
+                    for(; h_idx_out<outh && h_idx_in>=0; h_idx_out++, h_idx_in-=stride_h)
+                    {
+                        int j = 0;
+                        int base_out = h_idx_out*outw;
+                        int base_in = h_idx_in*kernel_w;
+                        int base = i*w;
+
+                        int n_w = 1;
+                        //outptr[h_idx_out*outw+w_idx_out] += m[i*w+j]*kptr[h_idx_in*9+w_idx_in];
+                        for(; j<kernel_stride_w; j+=stride_w)
+                        {
+                            for(int k_w=0; k_w<stride_w; k_w++)
+                            {
+                                int global_j = j+k_w;
+                                int kernel_j = global_j;
+                                float val = m[base+global_j];
+                                for(int kk_w=0; kk_w<n_w; kk_w++)
+                                {
+                                    outptr[base_out+kk_w] += val*kptr[base_in+kernel_j];
+                                    kernel_j -= stride_w;
+                                    //cnt++;
+                                }
+                            }
+                            n_w++;
+                        }
+                        for(; j<kernel_w; j++)
+                        {
+                            int kernel_j = j;
+                            float val = m[base+j];
+                            for(int kk_w=0; kk_w<max_n_w; kk_w++)
+                            {
+                                outptr[base_out+kk_w] += val*kptr[base_in+kernel_j];
+                                kernel_j -= stride_w;
+                                //cnt++;
+                            }
+                        }
+
+                        //////////////////////////////////////////
+                        int w_idx_out = 1;
+                        int w_idx_in = j-stride_w;
+                        for(; j<kernel_max_w; j+=stride_w)
+                        {
+                            float val0 = m[base+j];
+                            float val1 = m[base+j+1];
+                            float val2 = m[base+j+2];
+                            float val3 = m[base+j+3];
+                            int idx = base_in+w_idx_in;
+                            int idx2 = base_out+w_idx_out;
+
+                            outptr[idx2+2] += val3*kptr[idx-5];
+
+                            outptr[idx2+1] += val0*kptr[idx-4];
+                            outptr[idx2+1] += val1*kptr[idx-3];
+                            outptr[idx2+1] += val2*kptr[idx-2];
+                            outptr[idx2+1] += val3*kptr[idx-1];
+
+                            outptr[idx2] += val0*kptr[idx];
+                            outptr[idx2] += val1*kptr[idx+1];
+                            outptr[idx2] += val2*kptr[idx+2];
+                            outptr[idx2] += val3*kptr[idx+3];
+
+                            w_idx_out++;
+                            //cnt+=9;
+                            /*
+                            //float val[stride_w];
+                            int idx_in = base_in+w_idx_in;
+                            int idx_out = base_out+w_idx_out;
+                            int k_j = -(max_n_w-2)*stride_w-(stride_w-num_n_w);
+                            int out_j=max_n_w-1;
+                            for(int k_w=0; k_w<stride_w; k_w++)
+                            {
+                                val[k_w] = m[base+j+k_w];
+                            }
+                            for(int m_j=num_n_w; m_j<stride_w; m_j++)
+                            {
+                                outptr[idx_out+out_j] += val[m_j]*kptr[idx_in+k_j];
+                                k_j++;
+                                //cnt++;
+                            }
+
+                            out_j--;
+                            for(; out_j>=0; out_j--)
+                            {
+                                for(int m_j=0; m_j<stride_w; m_j++)
+                                {
+                                    outptr[idx_out+out_j] += val[m_j]*kptr[idx_in+k_j];
+                                    k_j++;
+                                    //cnt++;
+                                }
+                            }
+                            w_idx_out++;
+                            */
+                        }
+
+                        int ww = j+kernel_w;
+                        n_w--;
+                        ////////////////////////////////////////////
+                        int idx_in = base_in+w_idx_in;
+                        int idx_out = base_out+w_idx_out;
+                        int round = 0;
+
+                        for(; j<ww; j+=stride_w)
+                        {
+                            for(int k_w=0; k_w<stride_w; k_w++)
+                            {
+                                int global_j = j+k_w;
+                                int kernel_j = 0;
+                                float val = m[base+global_j];
+                                for(int kk_w=0; kk_w<n_w; kk_w++)
+                                {
+                                    outptr[idx_out+round+kk_w] += val*kptr[idx_in+kernel_j+k_w];
+                                    kernel_j -= stride_w;
+                                    //cnt++;
+                                }
+                            }
+                            round++;
+                            n_w--;
+                        }
+                    }
+                }
+            }
+        }
+        return 0;
+    }
+#endif
+
+#if 0
+    if (maxk == 45 && stride_h == 4 && stride_w == 4)
+    {
+        int cnt = 0;
+
+        int kernel_stride_h = (kernel_h/stride_h)*stride_h;
+        int kernel_max_h = (h-kernel_h)/stride_h*stride_h;
+        int num_n_h = 3;
+        int max_n_h = 2;
+
+        int kernel_stride_w = (kernel_w/stride_w)*stride_w;
+        int kernel_max_w = (w-kernel_w)/stride_w*stride_w;
+        int num_n_w = 3;
+        int max_n_w = 3;
+
+        #pragma omp parallel for num_threads(opt.num_threads)
+        for (int p=0; p<num_output; p++)
+        {
+            float* outptr = top_blob.channel(p);
+            const float* kptr = (const float*)weight_data + 45 * channels * p;
+
+            for (int q=0; q<channels; q++)
+            {
+                const Mat m = bottom_blob_bordered.channel(q);
+                int i = 0;
+                int n_h = 1;
+
+                for(; i<kernel_stride_h; i+=stride_h)
+                {
+                    for(int k_h=0; k_h<stride_h; k_h++)
+                    {
+                        for(int kk_h=0; kk_h<n_h; kk_h++)
+                        {
+                            //here
+                            int j = 0;
+                            int n_w = 1;
+
+                            for(; j<kernel_stride_w; j+=stride_w)
+                            {
+                                for(int k_w=0; k_w<stride_w; k_w++)
+                                {
+                                    for(int kk_w=0; kk_w<n_w; kk_w++)
+                                    {
+                                        outptr[0]++;
+                                        cnt++;
+                                    }
+                                }
+                                n_w++;
+                            }
+                            for(; j<kernel_w; j++)
+                            {
+                                for(int kk_w=0; kk_w<max_n_w; kk_w++)
+                                {
+                                    outptr[0]++;
+                                    cnt++;
+                                }
+                            }
+
+                            //////////////////////////////////////////
+                            for(; j<kernel_max_w; j+=stride_w)
+                            {
+                                int k_w = 0;
+                                for(; k_w<num_n_w; k_w++)
+                                {
+                                    for(int kk_w=0; kk_w<max_n_w-1; kk_w++)
+                                    {
+                                        outptr[0]++;
+                                        cnt++;
+                                    }
+                                }
+                                for(; k_w<stride_w; k_w++)
+                                {
+                                    for(int kk_w=0; kk_w<max_n_w; kk_w++)
+                                    {
+                                        outptr[0]++;
+                                        cnt++;
+                                    }
+                                }
+                            }
+
+                            int ww = j+kernel_w;
+                            n_w--;
+                            ////////////////////////////////////////////
+                            for(; j<ww; j+=stride_w)
+                            {
+                                for(int k_w=0; k_w<stride_w; k_w++)
+                                {
+                                    for(int kk_w=0; kk_w<n_w; kk_w++)
+                                    {
+                                        outptr[0]++;
+                                        cnt++;
+                                    }
+                                }
+                                n_w--; 
+                            }
+                        }
+                    }
+                    n_h++;
+                }
+
+                for(; i<kernel_h; i++)
+                {
+                    for(int kk_h=0; kk_h<max_n_h; kk_h++)
+                    {
+                        //here
+                        int j = 0;
+                        int n_w = 1;
+
+                        for(; j<kernel_stride_w; j+=stride_w)
+                        {
+                            for(int k_w=0; k_w<stride_w; k_w++)
+                            {
+                                for(int kk_w=0; kk_w<n_w; kk_w++)
+                                {
+                                    outptr[0]++;
+                                    cnt++;
+                                }
+                            }
+                            n_w++;
+                        }
+                        for(; j<kernel_w; j++)
+                        {
+                            for(int kk_w=0; kk_w<max_n_w; kk_w++)
+                            {
+                                outptr[0]++;
+                                cnt++;
+                            }
+                        }
+
+                        //////////////////////////////////////////
+                        for(; j<kernel_max_w; j+=stride_w)
+                        {
+                            int k_w = 0;
+                            for(; k_w<num_n_w; k_w++)
+                            {
+                                for(int kk_w=0; kk_w<max_n_w-1; kk_w++)
+                                {
+                                    outptr[0]++;
+                                    cnt++;
+                                }
+                            }
+                            for(; k_w<stride_w; k_w++)
+                            {
+                                for(int kk_w=0; kk_w<max_n_w; kk_w++)
+                                {
+                                    outptr[0]++;
+                                    cnt++;
+                                }
+                            }
+                        }
+
+                        int ww = j+kernel_w;
+                        n_w--;
+                        ////////////////////////////////////////////
+                        for(; j<ww; j+=stride_w)
+                        {
+                            for(int k_w=0; k_w<stride_w; k_w++)
+                            {
+                                for(int kk_w=0; kk_w<n_w; kk_w++)
+                                {
+                                    outptr[0]++;
+                                    cnt++;
+                                }
+                            }
+                            n_w--; 
+                        }
+                    }
+                }
+
+                //########################################
+                for(; i<kernel_max_h; i+=stride_h)
+                {
+                    int k_h = 0; 
+                    for(; k_h<num_n_h; k_h++)
+                    {
+                        for(int kk_h=0; kk_h<max_n_h-1; kk_h++)
+                        {
+                            //here
+                            int j = 0;
+                            int n_w = 1;
+
+                            for(; j<kernel_stride_w; j+=stride_w)
+                            {
+                                for(int k_w=0; k_w<stride_w; k_w++)
+                                {
+                                    for(int kk_w=0; kk_w<n_w; kk_w++)
+                                    {
+                                        outptr[0]++;
+                                        cnt++; 
+                                    }
+                                }
+                                n_w++;
+                            }
+                            for(; j<kernel_w; j++)
+                            {
+                                for(int kk_w=0; kk_w<max_n_w; kk_w++)
+                                {
+                                    outptr[0]++;
+                                    cnt++; 
+                                }
+                            }
+
+                            //////////////////////////////////////////
+                            for(; j<kernel_max_w; j+=stride_w)
+                            {
+                                int k_w = 0;
+                                for(; k_w<num_n_w; k_w++)
+                                {
+                                    for(int kk_w=0; kk_w<max_n_w-1; kk_w++)
+                                    {
+                                        outptr[0]++;
+                                        cnt++;
+                                    }
+                                }
+                                for(; k_w<stride_w; k_w++)
+                                {
+                                    for(int kk_w=0; kk_w<max_n_w; kk_w++)
+                                    {
+                                        outptr[0]++;
+                                        cnt++;
+                                    }
+                                }
+                            }
+
+                            int ww = j+kernel_w;
+                            n_w--;
+                            ////////////////////////////////////////////
+                            for(; j<ww; j+=stride_w)
+                            {
+                                for(int k_w=0; k_w<stride_w; k_w++)
+                                {
+                                    for(int kk_w=0; kk_w<n_w; kk_w++)
+                                    {
+                                        outptr[0]++;
+                                        cnt++;
+                                    }
+                                }
+                                n_w--; 
+                            }
+                        }
+                    }
+                    for(; k_h<stride_h; k_h++)
+                    {
+                        for(int kk_h=0; kk_h<max_n_h; kk_h++)
+                        {
+                            //here
+                            int j = 0;
+                            int n_w = 1;
+
+                            for(; j<kernel_stride_w; j+=stride_w)
+                            {
+                                for(int k_w=0; k_w<stride_w; k_w++)
+                                {
+                                    for(int kk_w=0; kk_w<n_w; kk_w++)
+                                    {
+                                        outptr[0]++;
+                                        cnt++; 
+                                    }
+                                }
+                                n_w++;
+                            }
+                            for(; j<kernel_w; j++)
+                            {
+                                for(int kk_w=0; kk_w<max_n_w; kk_w++)
+                                {
+                                    outptr[0]++;
+                                    cnt++; 
+                                }
+                            }
+
+                            //////////////////////////////////////////
+                            for(; j<kernel_max_w; j+=stride_w)
+                            {
+                                int k_w = 0;
+                                for(; k_w<num_n_w; k_w++)
+                                {
+                                    for(int kk_w=0; kk_w<max_n_w-1; kk_w++)
+                                    {
+                                        outptr[0]++;
+                                        cnt++;
+                                    }
+                                }
+                                for(; k_w<stride_w; k_w++)
+                                {
+                                    for(int kk_w=0; kk_w<max_n_w; kk_w++)
+                                    {
+                                        outptr[0]++;
+                                        cnt++;
+                                    }
+                                }
+                            }
+
+                            int ww = j+kernel_w;
+                            n_w--;
+                            ////////////////////////////////////////////
+                            for(; j<ww; j+=stride_w)
+                            {
+                                for(int k_w=0; k_w<stride_w; k_w++)
+                                {
+                                    for(int kk_w=0; kk_w<n_w; kk_w++)
+                                    {
+                                        outptr[0]++;
+                                        cnt++;
+                                    }
+                                }
+                                n_w--; 
+                            }
+                        }
+                    }
+                }
+
+                int hh = i+kernel_h;
+                n_h--;
+
+                //########################################
+                for(; i<hh; i+=stride_h)
+                {
+                    for(int k_h=0; k_h<stride_h; k_h++)
+                    {
+                        for(int kk_h=0; kk_h<n_h; kk_h++)
+                        {
+                            //here
+                            int j = 0;
+                            int n_w = 1;
+
+                            for(; j<kernel_stride_w; j+=stride_w)
+                            {
+                                for(int k_w=0; k_w<stride_w; k_w++)
+                                {
+                                    for(int kk_w=0; kk_w<n_w; kk_w++)
+                                    {
+                                        outptr[0]++;
+                                        cnt++; 
+                                    }
+                                }
+                                n_w++;
+                            }
+                            for(; j<kernel_w; j++)
+                            {
+                                for(int kk_w=0; kk_w<max_n_w; kk_w++)
+                                {
+                                    outptr[0]++;
+                                    cnt++; 
+                                }
+                            }
+
+                            //////////////////////////////////////////
+                            for(; j<kernel_max_w; j+=stride_w)
+                            {
+                                int k_w = 0;
+                                for(; k_w<num_n_w; k_w++)
+                                {
+                                    for(int kk_w=0; kk_w<max_n_w-1; kk_w++)
+                                    {
+                                        outptr[0]++;
+                                        cnt++;
+                                    }
+                                }
+                                for(; k_w<stride_w; k_w++)
+                                {
+                                    for(int kk_w=0; kk_w<max_n_w; kk_w++)
+                                    {
+                                        outptr[0]++;
+                                        cnt++;
+                                    }
+                                }
+                            }
+
+                            int ww = j+kernel_w;
+                            n_w--;
+                            ////////////////////////////////////////////
+                            for(; j<ww; j+=stride_w)
+                            {
+                                for(int k_w=0; k_w<stride_w; k_w++)
+                                {
+                                    for(int kk_w=0; kk_w<n_w; kk_w++)
+                                    {
+                                        outptr[0]++;
+                                        cnt++;
+                                    }
+                                }
+                                n_w--; 
+                            }
+                        }
+                    }
+                    n_h--;
+                }
+            }
+        }
+        return 0;
+    }
+#endif
+
+#if 0
+    if (maxk == 45 && stride_h == 4 && stride_w == 4)
+    {
+        int cnt = 0;
+        #pragma omp parallel for num_threads(opt.num_threads)
+        for (int p=0; p<num_output; p++)
+        {
+            float* outptr = top_blob.channel(p);
+            const float* kptr = (const float*)weight_data + 45 * channels * p;
+
+            for (int q=0; q<channels; q++)
+            {
+                const Mat m = bottom_blob_bordered.channel(q);
+                for(int i=0; i<h; i++)
+                {
+                    int h_idx_out = i>=5? (i-5)/stride_h+1:0;
+                    int h_idx_in = i-h_idx_out*stride_h;
+
+                    for(; h_idx_out<outh && h_idx_in>=0; h_idx_out++, h_idx_in-=stride_h)
+                    {
+                        int j = 0;
+                        int base_out = h_idx_out*outw;
+                        int base_in = h_idx_in*9;
+                        int base = i*w;
+                        //////////////////////////////////
+
+                        //outptr[h_idx_out*outw+w_idx_out] += m[i*w+j]*kptr[h_idx_in*9+w_idx_in];
+                        for(; j<4; j++)
+                        {
+                            outptr[base_out] += m[base+j]*kptr[base_in+j];
+                            //cnt++;
+                        }
+                        for(; j<8; j++)
+                        {
+                            float val = m[base+j];
+                            outptr[base_out] += val*kptr[base_in+j];
+                            outptr[base_out+1] += val*kptr[base_in+j-stride_w];
+                            //cnt += 2;
+                        }
+                        float val = m[base+j];
+                        outptr[base_out] += val*kptr[base_in+8];
+                        outptr[base_out+1] += val*kptr[base_in+4];
+                        outptr[base_out+2] += val*kptr[base_in];
+                        //cnt += 3;
+                        j++;
+
+                        //////////////////////////////////
+                        int ww = (outw-1)*stride_w;
+                        int w_idx_out = 1;
+                        int w_idx_in = j-stride_w;
+                        for(; j<ww; j+=4)
+                        {
+                            float val0 = m[base+j];
+                            float val1 = m[base+j+1];
+                            float val2 = m[base+j+2];
+                            float val3 = m[base+j+3];
+                            int idx = base_in+w_idx_in;
+                            int idx2 = base_out+w_idx_out;
+
+                            outptr[idx2+2] += val3*kptr[idx-5];
+
+                            outptr[idx2+1] += val0*kptr[idx-4];
+                            outptr[idx2+1] += val1*kptr[idx-3];
+                            outptr[idx2+1] += val2*kptr[idx-2];
+                            outptr[idx2+1] += val3*kptr[idx-1];
+
+                            outptr[idx2] += val0*kptr[idx];
+                            outptr[idx2] += val1*kptr[idx+1];
+                            outptr[idx2] += val2*kptr[idx+2];
+                            outptr[idx2] += val3*kptr[idx+3];
+
+                            //cnt+=9;
+                            w_idx_out++;
+                            /*
+                            val = m[base+j];
+                            outptr[base_out+w_idx_out] += val*kptr[base_in+w_idx_in];
+                            outptr[base_out+w_idx_out+1] += val*kptr[base_in+w_idx_in-stride_w];
+
+                            val = m[base+j+1];
+                            outptr[base_out+w_idx_out] += val*kptr[base_in+w_idx_in+1];
+                            outptr[base_out+w_idx_out+1] += val*kptr[base_in+w_idx_in-stride_w+1];
+
+                            val = m[base+j+2];
+                            outptr[base_out+w_idx_out] += val*kptr[base_in+w_idx_in+2];
+                            outptr[base_out+w_idx_out+1] += val*kptr[base_in+w_idx_in-stride_w+2];
+
+                            val = m[base+j+3];
+                            outptr[base_out+w_idx_out] += val*kptr[base_in+w_idx_in+3];
+                            outptr[base_out+w_idx_out+1] += val*kptr[base_in+w_idx_in-stride_w+3];
+                            outptr[base_out+w_idx_out+2] += val*kptr[base_in+w_idx_in-stride_w*2+3];
+                            //cnt+=9;
+                            w_idx_out++;
+                            */
+                        }
+                        ////////////////////////////////////////
+
+                        //outptr[h_idx_out*outw+w_idx_out] += m[i*w+j]*kptr[h_idx_in*9+w_idx_in];
+                        float val0 = m[base+j];
+                        float val1 = m[base+j+1];
+                        float val2 = m[base+j+2];
+                        float val3 = m[base+j+3];
+                        float val4 = m[base+j+4];
+                        float val5 = m[base+j+5];
+                        float val6 = m[base+j+6];
+                        float val7 = m[base+j+7];
+                        int idx = base_in+w_idx_in;
+                        int idx2 = base_out+w_idx_out;
+
+                        outptr[idx2+1] += val0*kptr[idx-4];
+                        outptr[idx2+1] += val1*kptr[idx-3];
+                        outptr[idx2+1] += val2*kptr[idx-2];
+                        outptr[idx2+1] += val3*kptr[idx-1];
+                        outptr[idx2+1] += val4*kptr[idx];
+                        outptr[idx2+1] += val5*kptr[idx+1];
+                        outptr[idx2+1] += val6*kptr[idx+2];
+                        outptr[idx2+1] += val7*kptr[idx+3];
+
+                        outptr[idx2] += val0*kptr[idx];
+                        outptr[idx2] += val1*kptr[idx+1];
+                        outptr[idx2] += val2*kptr[idx+2];
+                        outptr[idx2] += val3*kptr[idx+3];
+
+                        //cnt += 12;
+                        //j += 4;
+                        //w_idx_out++;
+                        //cnt+=8;
+
+                        //val0 = m[base+j];
+                        //val1 = m[base+j+1];
+                        //val2 = m[base+j+2];
+                        //val3 = m[base+j+3];
+
+                        //outptr[base_out+w_idx_out] += val0*kptr[base_in+w_idx_in];
+                        //outptr[base_out+w_idx_out] += val1*kptr[base_in+w_idx_in+1];
+                        //outptr[base_out+w_idx_out] += val2*kptr[base_in+w_idx_in+2];
+                        //outptr[base_out+w_idx_out] += val3*kptr[base_in+w_idx_in+3];
+                        //cnt += 4
+                    }
+                }
+            }
+        }
+        //printf("%d\n", cnt);
+        return 0;
+    }
+#endif
     // num_output
     #pragma omp parallel for num_threads(opt.num_threads)
     for (int p=0; p<num_output; p++)
@@ -346,13 +1286,11 @@ int Convolution::forward(const Mat& bottom_blob, Mat& top_blob, const Option& op
                         float w = kptr[k];
                         sum += val * w; // 41.45
                     }
-
                     kptr += maxk;
                 }
 
                 outptr[j] = sum;
             }
-
             outptr += outw;
         }
     }

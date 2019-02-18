@@ -186,21 +186,23 @@ static void copy_make_border_image(const Mat& src, Mat& dst, int top, int left, 
         // Center
         for (; y < (top + src.h); ++y)
         {
+            int base_in = (y-top)*src.w;
+            int base_out = y*w;
             int x = 0;
             // Center-Left
             for (; x < left; ++x)
             {
-                outptr[y*w+x] = ptr[(y-top)*src.w+(left-1-x)];
+                outptr[base_out+x] = ptr[base_in+(left-1-x)];
             }
             // Center-Center
             for (; x < (left+src.w); ++x)
             {
-                outptr[y*w+x] = ptr[(y-top)*src.w+(x-left)];
+                outptr[base_out+x] = ptr[base_in+(x-left)];
             }
             // Center-Right
-            for (; x < w; ++ x)
+            for (; x < w; ++x)
             {
-                outptr[y*w+x] = ptr[(y-top)*src.w+(left+2*src.w-1-x)];
+                outptr[base_out+x] = ptr[base_in+(left+2*src.w-1-x)];
             }
         }
 
@@ -208,10 +210,12 @@ static void copy_make_border_image(const Mat& src, Mat& dst, int top, int left, 
         y = 0;
         for (; y < top; ++y)
         {
+            int base_in = (2*top-1-y)*w;
+            int base_out = y*w;
             int x = 0;
             for (; x < w; ++x)
             {
-                outptr[y*w+x] = outptr[(2*top-1-y)*w+x];
+                outptr[base_out+x] = outptr[base_in+x];
             }
         }
 
@@ -219,10 +223,12 @@ static void copy_make_border_image(const Mat& src, Mat& dst, int top, int left, 
         y = top+src.h;
         for (; y < h; ++y)
         {
+            int base_in = (2*(top+src.h)-1-y)*w;
+            int base_out = y*w;
             int x = 0;
             for (; x < w; ++x)
             {
-                outptr[y*w+x] = outptr[(2*(top+src.h)-1-y)*w+x];
+                outptr[base_out+x] = outptr[base_in+x];
             }
         }
     }
