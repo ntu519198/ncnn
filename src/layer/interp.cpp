@@ -46,6 +46,7 @@ int Interp::forward(const Mat &bottom_blob, Mat &top_blob, const Option& opt) co
     int ow = output_width;
     float hscale = height_scale;
     float wscale = width_scale;
+
     if (bottom_blob.dims == 1)
     {
         h = 1;

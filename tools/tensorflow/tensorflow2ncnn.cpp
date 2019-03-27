@@ -380,7 +380,8 @@ int main(int argc, char** argv)
         {
             fprintf(pp, "%-16s", "Tile");
         }
-        else if (node.op() == "ResizeNearestNeighbor")
+        else if (node.op() == "ResizeNearestNeighbor" ||
+                 node.op() == "ResizeBilinear")
         {
             fprintf(pp, "%-16s", "Interp");
         }
@@ -1101,7 +1102,8 @@ int main(int argc, char** argv)
             fprintf(pp, " 2=%d", c_tiles);
 
         }
-        else if (node.op() == "ResizeNearestNeighbor")
+        else if (node.op() == "ResizeNearestNeighbor" ||
+                 node.op() == "ResizeBilinear")
         {
             // weights
             tensorflow::TensorProto tensor;
@@ -1109,6 +1111,8 @@ int main(int argc, char** argv)
 
             const int* output_size = reinterpret_cast<const int*>(tensor.tensor_content().c_str());
             int resize_type = 1;
+            if (node.op() == "ResizeBilinear")
+                resize_type = 2;
             fprintf(pp, " 0=%d", resize_type);
             fprintf(pp, " 3=%d", output_size[0]);
             fprintf(pp, " 4=%d", output_size[1]);
